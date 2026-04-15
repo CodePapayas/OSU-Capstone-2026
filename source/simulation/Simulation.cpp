@@ -28,14 +28,18 @@ void Simulation::initialize()
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    PerlinNoise2d _perlin = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d height_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d moisture_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d temperature_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
     std::cout << "Perlin noise generated!" << std::endl;
     
     // super hackey, will work on actually integrating noise proper into env.
     for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
-            double curr_noise_val = _perlin.SampleLayered(pos);
+            double curr_noise_val = height_noise.SampleLayered(pos);
+            moisture_noise.SampleLayered(pos);
+            temperature_noise.SampleLayered(pos);
             _environment->setTileValue(pos, curr_noise_val, 0);
         }
     }

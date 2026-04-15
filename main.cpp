@@ -16,7 +16,6 @@
 #include "source/entity/decision_center/biology.hpp"
 #include "source/entity/decision_center/brain.hpp"
 
-
 /** Capture a lightweight SimulationState snapshot from the live simulation. */
 static SimulationState capture_state(Simulation& sim, uint64_t tick) {
     SimulationState state;
@@ -277,8 +276,8 @@ int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, con
     }
     return 0;
 }
-int main(int argc, char* argv[]) {
 
+int main(int argc, char* argv[]) {
     // ---- Default configuration ----
     int         numTicks         = 10;
     int         autosaveInterval = 0;       // 0 = autosave disabled
