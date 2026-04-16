@@ -29,6 +29,7 @@ class Tile
 	public:
 		Tile() {
             terrain_type="Terrain Efficiency " + std::to_string(rand() % 3 + 1); // placeholder random terrain type
+            values = {{"height", 0},{"moisture", 0},{"curr_temp", 0}};
         };
         std::unordered_map<std::string, double> getValues(){return values;};
         void setValues(std::unordered_map<std::string, double> m){values = m;};

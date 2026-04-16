@@ -371,9 +371,9 @@ int Simulation::tick(int print){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
             double curr_temp = temperature_noise.SampleLayered(pos) + (temperature_multiplier.SampleLayered(pos) 
-            temperature_noise.SampleLayered(Vector2d(pos.x + temperature_movement.x, pos.y + temperature_movement.y)));
+            * temperature_noise.SampleLayered(Vector2d(pos.x + temperature_movement.x, pos.y + temperature_movement.y)));
             temperature_movement = Vector2d(temperature_movement.x++, temperature_movement.y++);
-            _environment->setTileValue(pos, , "curr_temp");
+            _environment->setTileValue(pos, curr_temp, "curr_temp");
         }
     }
 
@@ -640,7 +640,7 @@ float Simulation::get_vision_value() const
 void Simulation::testAccess()
 {
     std::cout << "Testing access to environment and entity..." << std::endl;
-    float val = environGetTileValue(0, "height");
+    float val = environGetTileValue(0, 0, "height");
     if (val)
     {
         std::cout << "Tile at 0,0 has value: " << val << std::endl;

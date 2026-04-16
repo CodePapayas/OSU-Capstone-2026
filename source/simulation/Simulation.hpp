@@ -52,7 +52,7 @@ public:
      * @brief Returns the value of the tile located at (x,y)
      * @return the float value.
      */
-    float environGetTileValue(int x, int y) const;
+    float environGetTileValue(int x, int y, std::string key) const;
 
     /**
      * @brief Returns the perception object for this simulation

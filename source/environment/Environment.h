@@ -35,7 +35,7 @@ public:
 
     Tile *getTile(Vector2d pos);
     std::unordered_map<std::string, double> getTileValues(Vector2d pos);
-    void setTileValues(Vector2d pos, std::vector<double> v);
+    void setTileValues(Vector2d pos, std::unordered_map<std::string, double> v);
     double getTileValue(Vector2d pos, std::string key);
     std::string getTileType(Vector2d pos);
     void setTileValue(Vector2d pos, double v, std::string key);
