@@ -28,19 +28,19 @@ void Simulation::initialize()
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    PerlinNoise2d height_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
-    PerlinNoise2d moisture_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
-    PerlinNoise2d temperature_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    height_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);          // represents height
+    moisture_noise = PerlinNoise2d(2345, 0.015, 1.0, 2);        // represents water content
+    temperature_noise = PerlinNoise2d(3456, 0.5, 1.0, 4);       // represents base temperature value
+    temperature_multiplier = PerlinNoise2d(3456, 0.5, 0.1, 4);  // multiplier for 
     std::cout << "Perlin noise generated!" << std::endl;
     
     // super hackey, will work on actually integrating noise proper into env.
     for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
-            double curr_noise_val = height_noise.SampleLayered(pos);
-            moisture_noise.SampleLayered(pos);
-            temperature_noise.SampleLayered(pos);
-            _environment->setTileValue(pos, curr_noise_val, 0);
+            _environment->setTileValue(pos, height_noise.SampleLayered(pos), "height");
+            _environment->setTileValue(pos, moisture_noise.SampleLayered(pos), "moisture");
+            _environment->setTileValue(pos, temperature_noise.SampleLayered(pos), "curr_temp");
         }
     }
     std::cout << "Environment noise loaded!" << std::endl;
@@ -99,9 +99,9 @@ void Simulation::seed_resources()
     }
 }   
 
-float Simulation::environGetTileValue(int x, int y) const
+float Simulation::environGetTileValue(int x, int y, std::string key) const
 {
-    return _environment->getTileValue(Vector2d(x, y), 0);
+    return _environment->getTileValue(Vector2d(x, y), key);
 }
 
 
@@ -366,6 +366,17 @@ void Simulation::consumption(){
 }
 
 int Simulation::tick(int print){
+    // update environment temperatures
+    for(int x = 0; x < _environment->getTileAmountX(); x++){
+        for(int y = 0; y < _environment->getTileAmountY(); y++){
+            Vector2d pos = Vector2d(x,y);
+            double curr_temp = temperature_noise.SampleLayered(pos) + (temperature_multiplier.SampleLayered(pos) 
+            temperature_noise.SampleLayered(Vector2d(pos.x + temperature_movement.x, pos.y + temperature_movement.y)));
+            temperature_movement = Vector2d(temperature_movement.x++, temperature_movement.y++);
+            _environment->setTileValue(pos, , "curr_temp");
+        }
+    }
+
     // Get the perception for the primary entity and pass it to the brain to get a decision
     _debug = print;
     if (!print){
@@ -629,7 +640,7 @@ float Simulation::get_vision_value() const
 void Simulation::testAccess()
 {
     std::cout << "Testing access to environment and entity..." << std::endl;
-    float val = environGetTileValue(0, 0);
+    float val = environGetTileValue(0, "height");
     if (val)
     {
         std::cout << "Tile at 0,0 has value: " << val << std::endl;

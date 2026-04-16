@@ -22,6 +22,11 @@ private:
     std::vector<std::unique_ptr<Entity>> _entities;
     std::unique_ptr<Perception> _perception;
     std::unique_ptr<ResourceManager> _resource_manager;
+    PerlinNoise2d height_noise;
+    PerlinNoise2d moisture_noise;
+    PerlinNoise2d temperature_noise;
+    PerlinNoise2d temperature_multiplier;
+    Vector2d temperature_movement;
     int _debug;
 
 public:
