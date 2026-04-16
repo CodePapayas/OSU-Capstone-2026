@@ -24,14 +24,14 @@ class Chunk;
 class Environment
 {
 private:    
-    static int _size_x;
-    static int _size_y;
+    int _size_x;
+    int _size_y;
     std::vector<std::vector<Tile*>> tiles;    
     std::unordered_map <int, Vector2d> tile_map; // get the X,Y for it for simplicity
 
 public:
     Environment(int size_x, int size_y);
-    static Vector2d boundCoords(Vector2d pos);
+    Vector2d boundCoords(Vector2d pos);
 
     Tile *getTile(Vector2d pos);
     std::unordered_map<std::string, double> getTileValues(Vector2d pos);
