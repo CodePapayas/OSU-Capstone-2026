@@ -97,6 +97,13 @@ public:
      */
     int brain_get_decision(const std::vector<double>& inputs);
 
+    /**
+     * @brief Calls upon the brain to make a decision
+     * @param inputs Input data vector for the brain decision
+     * @return Decision made by the brain
+     */
+    std::vector<double> brain_mutate_weights(const std::vector<double>& parentBrainWeights);
+
 
     // ==================== Biology Related Methods ====================
 
@@ -210,6 +217,8 @@ public:
      * @return The genetic value, or -1 if not found
      */
     double biology_get_genetic_value(const std::string& gene);
+
+    std::unordered_map<std::string, double> biology_mutate_genetics(const std::unordered_map<std::string, double>& parentGenome);
 
     /**
      * @brief Tells the biology to drain energy and water based on terrain type
