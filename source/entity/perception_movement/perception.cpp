@@ -110,7 +110,7 @@ std::vector<double> Perception::extract_tile_values_in_radius(
                 // Get the tile value from the environment
                 // Using the Vector2d class from Environment.h
                 Vector2d position(tile_x, tile_y);
-                double tile_value = environment.getTileValue(position, 0);
+                double tile_value = environment.getTileValue(position, "height");
                 tile_values.push_back(tile_value);
             } 
             // The perception wraps around now, thus bounds no longer exist.
