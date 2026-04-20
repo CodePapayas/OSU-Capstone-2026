@@ -3,6 +3,7 @@
 #include <iomanip>
 #include "biology.hpp"
 #include "brain.hpp"
+#include "mutate.hpp"
 #include "../../environment/Environment.h"
 
 // Static ID counter for entities
@@ -78,6 +79,10 @@ int Entity::brain_get_decision(const std::vector<double>& inputs)
     }
     // get a decision
     return _brain->decide(inputs);
+}
+
+std::vector<double> brain_mutate_weights(const std::vector<double>& parentBrainWeights) {
+    return mutate_vector(parentBrainWeights);
 }
 
 // ==================== Biology Related Methods ====================
@@ -310,4 +315,9 @@ std::pair<double, double> Entity::biology_movement(const std::string& terrain)
               << "Water drain for " << terrain << ": " << wdrain << std::endl;
 
     return std::make_pair(edrain, wdrain);
+}
+
+std::unordered_map<std::string, double> biology_mutate_genetics(const std::unordered_map<std::string, double>& parentGenome) 
+{
+    return mutate_genetics(parentGenome);
 }

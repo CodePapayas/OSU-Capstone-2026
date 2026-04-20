@@ -32,7 +32,7 @@ void Biology::set_random_attributes()
     for (auto& pair : _genetic_values)
     {
         double random_val = dis(gen);
-        pair.second = random_val * random_val; 
+        pair.second = std::sqrt(random_val); 
     }
 }
 
@@ -262,7 +262,8 @@ double Biology::tick_health_drain()
      * Determines how much health the creature loses each tick.
      * Health is drained if energy falls below a mass-dependent threshold.
      */
-    if (_energy < 1.0 - _genetic_values["Mass"])
+    // Trying a flat value to check against; Hoping for longer life
+    if (_energy < .2)
     {
         double difference = _genetic_values["Mass"] - _energy;
         double drain = std::pow(difference, 2.0);

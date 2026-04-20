@@ -32,54 +32,51 @@ std::vector<double> Perception::extract_tile_values_in_radius_of_type(
     std::vector<double> tile_values;
     
     // Calculate the total environment size
-    int env_size = environment.getTileArea();    
+    // int env_size = environment.getTileArea();
+    int width = environment.getTileAmountX();
+    int height = environment.getTileAmountY();
     
     // Scan a square grid centered on the agent's position
     // Goes from (center_x - radius) to (center_x + radius)
     for (int dx = -radius; dx <= radius; dx++) {
         for (int dy = -radius; dy <= radius; dy++) {
-            int tile_x = (center_x + dx + env_size) % env_size; // Wrap around horizontally
-            int tile_y = (center_y + dy + env_size) % env_size; // Wrap around vertically
+            int tile_x = ((center_x + dx ) % width + width); // Wrap around horizontally
+            int tile_y = ((center_y + dy) % height + height); // Wrap around vertically
+                
+            // Get the tile type from the environment
+            Vector2d position(tile_x, tile_y);
+            std::string current_tile_type = environment.getTileType(position);
             
-            // Check if the tile is within environment bounds
-            if (tile_x >= 0 && tile_x < env_size && 
-                tile_y >= 0 && tile_y < env_size) {
-                
-                // Get the tile type from the environment
-                Vector2d position(tile_x, tile_y);
-                std::string current_tile_type = environment.getTileType(position);
-                
-                // If the tile type matches the specified type, get its value
-                if (tile_type == "Food") {
-                    ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
-                    if (resource && resource->getType() == ResourceType::FOOD) {
-                        double energyValue = resource->getEnergyValue();
-                        tile_values.push_back(energyValue);
-                    }
-                    else {
-                        tile_values.push_back(0.0); // No food resource, push default value
-                    }
-                }
-                else if (tile_type=="Water") {
-                    ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
-                    if (resource && resource->getType() == ResourceType::WATER) {
-                        double energyValue = resource->getEnergyValue();
-                        tile_values.push_back(energyValue);
-                    }
-                    else {
-                        tile_values.push_back(0.0); // No water resource, push default value
-                    }
+            // If the tile type matches the specified type, get its value
+            if (tile_type == "Food") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::FOOD) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
                 }
                 else {
-                    if (tile_type == current_tile_type) {
-                        double tile_value = environment.getTileValue(position, 0);
-                        tile_values.push_back(tile_value);
-                    }
-                    else {
-                        tile_values.push_back(0.0); // Tile type doesn't match, push default value
-                    }
+                    tile_values.push_back(0.0); // No food resource, push default value
                 }
-            } 
+            }
+            else if (tile_type=="Water") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::WATER) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
+                }
+                else {
+                    tile_values.push_back(0.0); // No water resource, push default value
+                }
+            }
+            else {
+                if (tile_type == current_tile_type) {
+                    double tile_value = environment.getTileValue(position, 0);
+                    tile_values.push_back(tile_value);
+                }
+                else {
+                    tile_values.push_back(0.0); // Tile type doesn't match, push default value
+                }
+            }
         }
     }
     return tile_values;
@@ -94,30 +91,26 @@ std::vector<double> Perception::extract_tile_values_in_radius(
     std::vector<double> tile_values;
     
     // Calculate the total environment size
-    int env_size = environment.getTileArea();    
+    // int env_size = environment.getTileArea();
+    int width = environment.getTileAmountX();
+    int height = environment.getTileAmountY();  
     
     // Scan a square grid centered on the agent's position
     // Goes from (center_x - radius) to (center_x + radius)
     for (int dx = -radius; dx <= radius; dx++) {
         for (int dy = -radius; dy <= radius; dy++) {
-            int tile_x = (center_x + dx + env_size) % env_size; // Wrap around horizontally
-            int tile_y = (center_y + dy + env_size) % env_size; // Wrap around vertically
-            
-            // Check if the tile is within environment bounds
-            if (tile_x >= 0 && tile_x < env_size && 
-                tile_y >= 0 && tile_y < env_size) {
-                
-                // Get the tile value from the environment
-                // Using the Vector2d class from Environment.h
-                Vector2d position(tile_x, tile_y);
-                double tile_value = environment.getTileValue(position, 0);
-                tile_values.push_back(tile_value);
-            } 
-            // The perception wraps around now, thus bounds no longer exist.
-            // else {
-            //     // Outside bounds - use a default value (e.g., 0.0)
-            //     tile_values.push_back(0.0);
-            // }
+            int tile_x = ((center_x + dx ) % width + width); // Wrap around horizontally
+            int tile_y = ((center_y + dy) % height + height); // Wrap around vertically  
+            // Get the tile value from the environment
+            // Using the Vector2d class from Environment.h
+            Vector2d position(tile_x, tile_y);
+            double tile_value = environment.getTileValue(position, 0);
+            tile_values.push_back(tile_value);
+        // The perception wraps around now, thus bounds no longer exist.
+        // else {
+        //     // Outside bounds - use a default value (e.g., 0.0)
+        //     tile_values.push_back(0.0);
+        // }
         }
     }
     

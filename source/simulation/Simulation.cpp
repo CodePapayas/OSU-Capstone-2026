@@ -21,17 +21,17 @@ Simulation::Simulation()
 
 Simulation::~Simulation() = default;
 
-void Simulation::initialize()
+void Simulation::initialize(int num_entities)
 {
-    // Create a new environment
+    num_entities = std::max(1, std::min(num_entities, 50));
+
     int size = 32;
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
     PerlinNoise2d _perlin = PerlinNoise2d(1234, 0.025, 1.0, 8);
     std::cout << "Perlin noise generated!" << std::endl;
-    
-    // super hackey, will work on actually integrating noise proper into env.
+
     for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
@@ -41,33 +41,20 @@ void Simulation::initialize()
     }
     std::cout << "Environment noise loaded!" << std::endl;
 
-    // Create an entity
-    auto entity = std::make_unique<Entity>();
-    std::cout << "Entity created successfully with ID: " << entity->get_id() << std::endl;
-    entity->set_coordinates(Vector2d(0, 0)); // Set initial coordinates for the entity
-    // Create a brain with a neural network architecture
-    // Architecture: 28 inputs -> 8 hidden -> 8 hidden -> 6 outputs () (128 inputs for 5x5 perception of 3 environtypes and food and water + 3 internal state metrics)
-    std::vector<int> layer_sizes = {128, 200, 200, 6}; // 28 because perception size is 5x5 and then the entity's internal state (3 values for now)
-    auto brain = std::make_shared<Brain>(layer_sizes);
-    std::cout << "Brain created successfully with " << brain->get_layer_count() << " layers!" << std::endl;
+    std::vector<int> layer_sizes = {128, 200, 200, 7};
+    for (int i = 0; i < num_entities; ++i) {
+        auto entity = std::make_unique<Entity>();
+        entity->set_coordinates(Vector2d(rand() % _environment->getTileAmountX(),
+                                         rand() % _environment->getTileAmountY()));
+        entity->set_brain(std::make_shared<Brain>(layer_sizes));
+        entity->set_biology(std::make_shared<Biology>(false));
+        _entities.push_back(std::move(entity));
+    }
+    std::cout << "Spawned " << num_entities << " entities." << std::endl;
 
-    // Create biology
-    auto biology = std::make_shared<Biology>(false);  // false for randomized genetics
-    std::cout << "Biology created successfully!" << std::endl;
-
-    // Set the brain and biology on the entity
-    entity->set_brain(brain);
-    entity->set_biology(biology);
-    std::cout << "Entity configured with brain and biology!" << std::endl;
-
-    // Add entity to the simulation
-    _entities.push_back(std::move(entity));
-
-    // Add perception to sim class
     _perception = std::make_unique<Perception>();
     std::cout << "Perception module initialized successfully!" << std::endl;
 
-    // Add resource manager
     _resource_manager = std::make_unique<ResourceManager>();
     seed_resources();
     std::cout << "Resource manager initialized successfully!" << std::endl;
@@ -168,7 +155,7 @@ void Simulation::set_primary_entity_random(){
     entity->set_coordinates(Vector2d(rand() % _environment->getTileAmountX(), rand() % _environment->getTileAmountY())); // Set random initial coordinates for the entity
     // Create a brain with a neural network architecture
     // Architecture: 28 inputs -> 8 hidden -> 8 hidden -> 6 outputs () (128 inputs for 5x5 perception of 3 environtypes and food and water + 3 internal state metrics)
-    std::vector<int> layer_sizes = {128, 200, 200, 6}; // 28 because perception size is 5x5 and then the entity's internal state (3 values for now)
+    std::vector<int> layer_sizes = {128, 200, 200, 7}; // 28 because perception size is 5x5 and then the entity's internal state (3 values for now)
     auto brain = std::make_shared<Brain>(layer_sizes);
     std::cout << "Brain created successfully with " << brain->get_layer_count() << " layers!" << std::endl;
 
@@ -186,11 +173,11 @@ void Simulation::set_primary_entity_random(){
 }
 Entity* Simulation::get_primary_entity() const
 {
-    if (_entities.empty())
+    if (_entities.empty() || _current_entity_index >= (int)_entities.size())
     {
         return nullptr;
     }
-    return _entities[0].get();
+    return _entities[_current_entity_index].get();
 }
 
 std::vector<double> Simulation::get_perception() const
@@ -298,9 +285,28 @@ void Simulation::interpret_decision(int decision_code)
             break;
         case DecisionCodes::CONSUME:
             std::cout << "Entity consumes resources." << std::endl;
-            // Logic for consuming resources in current tile would go here
             Simulation::consumption();
             break;
+        case DecisionCodes::REPRODUCE:
+        {
+            Entity* parent1 = get_primary_entity();
+            int vision_radius = std::max(2, static_cast<int>(4 * parent1->biology_get_genetic_value("Vision")));
+            Entity* parent2 = nullptr;
+            for (int j = 0; j < (int)_entities.size(); ++j) {
+                if (j == _current_entity_index || _entities[j]->biology_check_death()) continue;
+                int dx = std::abs(_entities[j]->get_coordinates().x - parent1->get_coordinates().x);
+                int dy = std::abs(_entities[j]->get_coordinates().y - parent1->get_coordinates().y);
+                if (std::max(dx, dy) <= vision_radius) {
+                    parent2 = _entities[j].get();
+                    break;
+                }
+            }
+            if (parent2) {
+                reproduce(parent1, parent2);
+                std::cout << "Entity reproduced." << std::endl;
+            }
+            break;
+        }
         default:
             std::cerr << "Unknown decision code: " << decision_code << std::endl;
     }
@@ -362,36 +368,43 @@ void Simulation::consumption(){
 }
 
 int Simulation::tick(int print){
-    // Get the perception for the primary entity and pass it to the brain to get a decision
     _debug = print;
     if (!print){
-        //redirect cout to null to avoid spamming the console with debug info every tick, will be reenabled at the end of the tick
         std::cout.setstate(std::ios_base::failbit);
     }
-    std::vector<double> perception = get_perception();
-    int decision = pass_perception_to_brain();
-    interpret_decision(decision);
-    get_primary_entity()->update_biology(); // Handle biology updates like energy drain, health regen, etc.
-    get_primary_entity()->biology_get_metrics(true);
+
+    for (int i = 0; i < (int)_entities.size(); ++i) {
+        _current_entity_index = i;
+        if (_entities[i]->biology_check_death()) continue;
+
+        int decision = pass_perception_to_brain();
+        interpret_decision(decision);
+        _entities[i]->update_biology();
+        _entities[i]->biology_get_metrics(true);
+    }
+
+    _current_entity_index = 0;
+
     cout << _environment->getTileAmountX() << "x" << _environment->getTileAmountY() << endl;
     if (print){
         display_environment();
     }
-    bool entity_dead = get_primary_entity()->biology_check_death();
-    if (entity_dead) {
-        //repoint cout before printing death message
-        if (!print){
-            std::cout.clear();
-        }
-        std::cout << "Entity has died. Ending simulation." << std::endl;
-        // In a more complex simulation, we might want to remove the entity and continue
-        return -1;
+
+    int alive = 0;
+    for (const auto& e : _entities) {
+        if (!e->biology_check_death()) ++alive;
     }
+
     if (!print){
         std::cout.clear();
     }
 
-    return 0; // Return 0 to indicate the tick completed successfully
+    if (alive == 0) {
+        std::cout << "All entities have died. Ending simulation." << std::endl;
+        return -1;
+    }
+    std::cout << alive << "/" << _entities.size() << " entities alive." << std::endl;
+    return 0;
 }
 
 size_t Simulation::get_entity_count() const
@@ -531,29 +544,35 @@ void Simulation::display_environment() const
         return;
     }
 
-    Vector2d entity_pos = get_primary_entity() ? get_primary_entity()->get_coordinates() : Vector2d(-1, -1);
-
     constexpr const char* kSolidBlock = u8"\u2588\u2588";
     constexpr const char* kLightShade = u8"\u2591\u2591";
 
     std::cout << "\n=== Environment Display ===\n" << std::endl;
-    // Normal 2d traversal of the environment grid
     for (int y = 0; y < _environment->getTileAmountY(); ++y)
     {
         for (int x = 0; x < _environment->getTileAmountX(); ++x)
         {
             double tile_value = _environment->getTileValue(Vector2d(x, y), 0);
-            // Check if an entity is at this location, probably a better way down the line
-            if (entity_pos.x == x && entity_pos.y == y)
+
+            Entity* entity_here = nullptr;
+            for (const auto& e : _entities) {
+                if (!e->biology_check_death() &&
+                    e->get_coordinates().x == x && e->get_coordinates().y == y) {
+                    entity_here = e.get();
+                    break;
+                }
+            }
+
+            if (entity_here)
             {
-                double curr_health = get_primary_entity()->biology_get_metrics()["Health"];
+                double curr_health = entity_here->biology_get_metrics()["Health"];
                 int r, g, b;
                 r = 255;
-                g = (int)((curr_health) * 255);
-                b = (int)((curr_health) * 255);
+                g = (int)(curr_health * 255);
+                b = (int)(curr_health * 255);
                 std::cout << "\033[38;2;" << r << ";" << g << ";" << b << "m"
                           << kSolidBlock
-                          << "\033[0m"; // Reset color
+                          << "\033[0m";
             }
             else if(!_resource_manager->findResourcesInRange(Position(x, y), 0).empty()) // Check if there's a resource at this location
             {

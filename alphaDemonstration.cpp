@@ -62,6 +62,7 @@ static void print_usage(const char* prog) {
         << "Usage: " << prog << " [options]\n"
         << "\nOptions:\n"
         << "  --ticks N         Number of simulation ticks to run  (default: 10)\n"
+        << "  --agents N        Number of agents to spawn [1-50]   (default: 5)\n"
         << "  --autosave K      Autosave every K ticks, 0=off      (default: 0)\n"
         << "  --buffer-size N   Circular buffer capacity            (default: 1000)\n"
         << "  --save-dir DIR    Directory for autosave files        (default: saves/)\n"
@@ -72,6 +73,7 @@ int main(int argc, char* argv[]) {
 
     // ---- Default configuration ----
     int         numTicks         = 10;
+    int         numAgents        = 5;
     int         autosaveInterval = 0;       // 0 = autosave disabled
     size_t      bufferCapacity   = 1000;
     std::string saveDir          = "saves";
@@ -81,6 +83,8 @@ int main(int argc, char* argv[]) {
         std::string arg = argv[i];
         if (arg == "--ticks" && i + 1 < argc) {
             numTicks = std::stoi(argv[++i]);
+        } else if (arg == "--agents" && i + 1 < argc) {
+            numAgents = std::max(1, std::min(std::stoi(argv[++i]), 50));
         } else if (arg == "--autosave" && i + 1 < argc) {
             autosaveInterval = std::stoi(argv[++i]);
         } else if (arg == "--buffer-size" && i + 1 < argc) {
@@ -96,12 +100,12 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-    
+
     // ---- Initialise simulation ----
     Simulation sim;
-    sim.initialize();
+    sim.initialize(numAgents);
     std::cout << "\nSimulation setup complete with "
-              << sim.get_entity_count() << " entity!" << std::endl;
+              << sim.get_entity_count() << " entities." << std::endl;
 
     // ---- Initialise circular buffer for state history ----
     CircularBuffer<SimulationState> stateHistory(bufferCapacity);

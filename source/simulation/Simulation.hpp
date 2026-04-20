@@ -23,6 +23,7 @@ private:
     std::unique_ptr<Perception> _perception;
     std::unique_ptr<ResourceManager> _resource_manager;
     int _debug;
+    int _current_entity_index = 0;
 
 public:
     /**
@@ -38,11 +39,11 @@ public:
     /**
      * @brief Initializes the simulation with environment, entity, and brain. Currently all randos
      */
-    void initialize();
+    void initialize(int num_entities = 5);
 
     void seed_resources();
 
-    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5};
+    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6};
     /**
      * @brief Returns the value of the tile located at (x,y)
      * @return the float value.
