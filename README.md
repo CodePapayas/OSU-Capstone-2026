@@ -1,4 +1,4 @@
-Kai Lindskog, Zachary Wilkins-Olson, Zachary Sherman, Shane Bliss, Dillon Stickler
+Kai Lindskog
 Oregon State University
 CS 462
 
@@ -40,24 +40,28 @@ Run persistence tests:
 ./test_auto_save
 ```
 
-## CLI & Autosave
+## Running the simulation with live stats
 
-Build and run the simulation from the project root:
+Always run from the project root so `db/schema.sql` resolves correctly.
+
+**Terminal 1 — run the simulation:**
 ```
-mkdir -p build && cd build
-cmake ..
-make -j4
-./main --ticks 100 --autosave 25
+./build_main/main_exe
 ```
 
-Options:
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--ticks N` | 10 | Number of simulation ticks |
-| `--autosave K` | 0 (off) | Save state history every K ticks |
-| `--buffer-size N` | 1000 | Circular buffer capacity |
-| `--save-dir DIR` | `saves/` | Output directory for autosave files |
-| `--help` | | Show usage |
+**Terminal 2 — run the live visualizer** (polls the DB and redraws every 2 seconds by default):
+```
+./build_main/data_visualization/live_visualizer_tool
+```
+
+Optional arguments (no brackets):
+```
+./build_main/data_visualization/live_visualizer_tool <poll_interval_seconds> <history_limit>
+# e.g. poll every 2 seconds, show last 60 ticks:
+./build_main/data_visualization/live_visualizer_tool 2 60
+```
+
+Both executables use the same database env vars (`ALIFE_DB_HOST`, `ALIFE_DB_PORT`, `ALIFE_DB_NAME`, `ALIFE_DB_USER`) — make sure they are set in both terminals.
 
 ## Project structure
 
