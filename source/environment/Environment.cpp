@@ -35,6 +35,7 @@ class Tile{
         std::vector<double> getValues(){return values;};
         void setValues(std::vector<double> v){values = v;};
         void setValue(double v, int index){values[index] = v;};
+        void updateConditions();
         std::string getTerrainType(){return terrain_type;};
         
 };

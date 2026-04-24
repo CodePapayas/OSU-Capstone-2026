@@ -40,6 +40,7 @@ public:
     int getTileAmountX() {return tiles.size();};
     int getTileAmountY() {return tiles[0].size();};
     int getTileArea() {return tiles[0].size() * tiles.size();};
+    void updateTiles();
     Vector2d getTileFromID(int id);
 };
 

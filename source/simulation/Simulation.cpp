@@ -11,6 +11,7 @@
 #include "../entity/decision_center/biology_constants.hpp"
 #include <algorithm>
 #include <cmath>
+#include <vector>
 #include <iostream>
 #include <format>
 
@@ -29,16 +30,24 @@ void Simulation::initialize(int num_entities)
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    PerlinNoise2d _perlin = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d height_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d moisture_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
+    PerlinNoise2d temperature_noise = PerlinNoise2d(1234, 0.025, 1.0, 8);
     std::cout << "Perlin noise generated!" << std::endl;
-
+    
+    // super hackey, will work on actually integrating noise proper into env.
     for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
-            double curr_noise_val = _perlin.SampleLayered(pos);
-            _environment->setTileValue(pos, curr_noise_val, 0);
+            std::vector<double> conditions = [
+                height_noise.SampleLayered(pos),
+                moisture_noise.SampleLayered(pos),
+                temperature_noise.SampleLayered(pos)
+            ];
+            _environment->setTileValues(pos, curr_noise_val, conditions);
         }
     }
+
     std::cout << "Environment noise loaded!" << std::endl;
 
     std::vector<int> layer_sizes = {128, 200, 200, 7};
