@@ -40,13 +40,13 @@ void Simulation::initialize(int num_entities)
     for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
-            std::vector<double> conditions = [
+            std::vector<double> conditions = {
                 height_noise.SampleLayered(pos),        // height of the tile
                 moisture_noise.SampleLayered(pos),      // moisture of the tile
                 temperature_noise.SampleLayered(pos),   // resting temperature of the tile
                 0                                       // current temperature
-            ];
-            _environment->setTileValues(pos, curr_noise_val, conditions);
+            };
+            _environment->setTileValues(pos, conditions);
         }
     }
 

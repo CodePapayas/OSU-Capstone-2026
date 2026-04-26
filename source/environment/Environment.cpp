@@ -4,6 +4,7 @@
 
 #include "Environment.h"
 #include "MathVector.hpp"
+#include <string>
 // Environment Class
 // Responsible for creating, handling, and accessing the simulation environment data.
 // Agents and other simulation entities can access specific data necessary through
