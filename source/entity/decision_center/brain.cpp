@@ -28,7 +28,8 @@ double relu(double x) {
 // computes the sum of element-wise products of two vectors.
 double dot_product(std::vector<double> v1, std::vector<double> v2) {
     double result = 0;
-    for (int i = 0; i < v1.size(); ++i) {
+    int min = v1.size();//(v1.size() < v2.size()) ? v1.size() : v2.size();
+    for (int i = 0; i < min; ++i) {
         result += v1[i] * v2[i];
     }
     return result;

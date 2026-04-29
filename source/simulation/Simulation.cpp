@@ -253,7 +253,7 @@ int Simulation::pass_perception_to_brain()
         float vision_value = entity->biology_get_genetic_value("Vision");
         int tilesToIgnore = std::max(static_cast<int>(25.0 - (25 * vision_value)), 1); // at max vision (1.0), ignore 0 tiles, at min vision (0.0) ignore 24 tiles (only sees own tile) 
     
-    // Add the filtered values to the master perception list
+        // Add the filtered values to the master perception list
         std::vector<double> adaptedVision = filter_perception(perception, tilesToIgnore);
         filteredPerception.insert(filteredPerception.end(), adaptedVision.begin(), adaptedVision.end());  
     }
