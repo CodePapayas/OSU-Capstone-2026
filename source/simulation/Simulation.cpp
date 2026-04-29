@@ -248,6 +248,8 @@ int Simulation::pass_perception_to_brain()
                 type_str = "TERRAIN_3";
                 break;
         }
+
+        // FILTERS OUT TOO MANY TILES, is causing a size mismatch in the dot product function in the brain module, causing vector subscript out-of-bounds issue
         std::vector<double> perception = get_perception_expanded(type_str);
         // Get the strength of the entities vision and determine how many tiles to ignore
         float vision_value = entity->biology_get_genetic_value("Vision");
