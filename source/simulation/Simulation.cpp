@@ -390,7 +390,7 @@ int Simulation::tick(int print){
      for(int x = 0; x < _environment->getTileAmountX(); x++){
         for(int y = 0; y < _environment->getTileAmountY(); y++){
             Vector2d pos = Vector2d(x,y);
-            double curr_temp = temperature_noise.SampleLayered(pos) + (temperature_multiplier.SampleLayered(pos) 
+            double curr_temp =  _environment->getTileValue(pos, 2) + ( _environment->getTileValue(pos, 3)
             * temperature_noise.SampleLayered(Vector2d(pos.x + temperature_movement.x, pos.y + temperature_movement.y)));
             temperature_movement = Vector2d(temperature_movement.x++, temperature_movement.y++);
             _environment->setTileValue(pos, curr_temp, 4);
