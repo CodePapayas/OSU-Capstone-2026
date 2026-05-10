@@ -53,3 +53,21 @@ add_executable(alphaDemonstration
 if(TARGET decision_center)
     target_link_libraries(main_exe PRIVATE decision_center)
 endif()
+
+# filter_perception stack-overflow regression tests
+enable_testing()
+add_executable(test_filter_perception
+    source/simulation/test_filter_perception.cpp
+    source/simulation/Simulation.cpp
+    source/environment/Environment.cpp
+    source/environment/resource_node.cpp
+    ${PERCEPTION_MOVEMENT_SOURCES}
+    ${DECISION_CENTER_SOURCES}
+)
+target_include_directories(test_filter_perception PRIVATE
+    ${PROJECT_SOURCE_DIR}/source/entity/decision_center
+    ${PROJECT_SOURCE_DIR}/source
+    ${PROJECT_SOURCE_DIR}/source/entity/perception_movement
+    ${PROJECT_SOURCE_DIR}/source/entity/decision_center/tests
+)
+add_test(NAME FilterPerceptionTests COMMAND test_filter_perception)

@@ -78,7 +78,7 @@ int Entity::brain_get_decision(const std::vector<double>& inputs)
         return -1;
     }
     // get a decision
-    return _brain->decide(inputs);
+    return _brain->softDecide(inputs);
 }
 
 std::vector<double> brain_mutate_weights(const std::vector<double>& parentBrainWeights) {

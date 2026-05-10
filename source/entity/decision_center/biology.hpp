@@ -21,6 +21,7 @@ private:
     double _energy;
     double _health;
     double _water;
+    int _dehydration_ticks = 0; // consecutive ticks at 0 water; resets on any drink
     std::unordered_map<std::string, double> _genetic_values;
 
 public:

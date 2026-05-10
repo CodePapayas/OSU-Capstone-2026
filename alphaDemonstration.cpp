@@ -62,7 +62,9 @@ static void print_usage(const char* prog) {
         << "Usage: " << prog << " [options]\n"
         << "\nOptions:\n"
         << "  --ticks N         Number of simulation ticks to run  (default: 10)\n"
-        << "  --agents N        Number of agents to spawn [1-50]   (default: 5)\n"
+        << "  --agents N        Number of agents to spawn          (default: 5)\n"
+        << "  --pop-cap N       Max population via reproduction    (default: 200)\n"
+        << "  --fps N           Ticks per second for display, 0=unlimited (default: 0)\n"
         << "  --autosave K      Autosave every K ticks, 0=off      (default: 0)\n"
         << "  --buffer-size N   Circular buffer capacity            (default: 1000)\n"
         << "  --save-dir DIR    Directory for autosave files        (default: saves/)\n"
@@ -74,6 +76,8 @@ int main(int argc, char* argv[]) {
     // ---- Default configuration ----
     int         numTicks         = 10;
     int         numAgents        = 5;
+    size_t      popCap           = 200;
+    int         fps              = 0;       // 0 = unlimited
     int         autosaveInterval = 0;       // 0 = autosave disabled
     size_t      bufferCapacity   = 1000;
     std::string saveDir          = "saves";
@@ -84,7 +88,11 @@ int main(int argc, char* argv[]) {
         if (arg == "--ticks" && i + 1 < argc) {
             numTicks = std::stoi(argv[++i]);
         } else if (arg == "--agents" && i + 1 < argc) {
-            numAgents = std::max(1, std::min(std::stoi(argv[++i]), 50));
+            numAgents = std::max(1, std::stoi(argv[++i]));
+        } else if (arg == "--pop-cap" && i + 1 < argc) {
+            popCap = static_cast<size_t>(std::stoull(argv[++i]));
+        } else if (arg == "--fps" && i + 1 < argc) {
+            fps = std::max(0, std::stoi(argv[++i]));
         } else if (arg == "--autosave" && i + 1 < argc) {
             autosaveInterval = std::stoi(argv[++i]);
         } else if (arg == "--buffer-size" && i + 1 < argc) {
@@ -104,6 +112,7 @@ int main(int argc, char* argv[]) {
     // ---- Initialise simulation ----
     Simulation sim;
     sim.initialize(numAgents);
+    sim.set_pop_cap(popCap);
     std::cout << "\nSimulation setup complete with "
               << sim.get_entity_count() << " entities." << std::endl;
 
@@ -149,6 +158,9 @@ int main(int argc, char* argv[]) {
             }
             break;
         }
+
+        if (fps > 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps));
     }
 
     // Print a summary to the console

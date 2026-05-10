@@ -90,6 +90,8 @@ float Simulation::environGetTileValue(int x, int y) const
 
 Entity* Simulation::reproduce(Entity* p1, Entity* p2)
 {
+    if (_entities.size() >= _pop_cap) return nullptr;
+
     // Redirect cout to null to suppress output during reproduction
     std::streambuf* originalCoutBuffer = std::cout.rdbuf();
     std::cout.rdbuf(nullptr);
@@ -301,8 +303,7 @@ void Simulation::interpret_decision(int decision_code)
                     break;
                 }
             }
-            if (parent2) {
-                reproduce(parent1, parent2);
+            if (parent2 && reproduce(parent1, parent2)) {
                 std::cout << "Entity reproduced." << std::endl;
             }
             break;
@@ -334,16 +335,16 @@ void Simulation::execute_movement(int direction){
     //entity->biology_movement(_environment->getTileType((entity->x, entity->y))); // Something like this in practice
     entity->biology_movement(terrain_type); // Placeholder until we have actual terrain types implemented
     
-    //check if there's a resource on the new tile and consume it if there is
+    // Drink from water resource if below thirst threshold.
+    // Threshold scales with Mass: larger creatures need more water to stay hydrated.
     ResourceNode* resource = _resource_manager->getResourceAtPosition(Position(entity->x, entity->y));
-    if (resource) {
-        double energyGained = resource->consume(entity->biology_get_genetic_value("Mass")); // Consume energy based on Mass ?
-        if (resource->getType() == ResourceType::FOOD) {
-            std::cout << "Entity consumed FOOD resource for" << energyGained << " raw energy." << std::endl;
-            entity->biology_eat(energyGained); // Add the consumed energy to the entity's biology
-        } else if (resource->getType() == ResourceType::WATER) {
-            std::cout << "Entity consumed WATER resource for " << energyGained << " raw water." << std::endl;
-            entity->biology_drink(energyGained); // Add the consumed energy to the entity's biology
+    if (resource && resource->getType() == ResourceType::WATER) {
+        double mass = entity->biology_get_genetic_value("Mass");
+        double thirst_threshold = 0.2 * (1.0 + mass); // [0.2, 0.4] across mass range
+        if (entity->biology_get_metrics()["Water"] < thirst_threshold) {
+            double waterGained = resource->consume(mass);
+            std::cout << "Entity drank WATER for " << waterGained << " water (thirsty)." << std::endl;
+            entity->biology_drink(waterGained);
         }
     }
 
@@ -373,7 +374,8 @@ int Simulation::tick(int print){
         std::cout.setstate(std::ios_base::failbit);
     }
 
-    for (int i = 0; i < (int)_entities.size(); ++i) {
+    int entity_count = (int)_entities.size();
+    for (int i = 0; i < entity_count; ++i) {
         _current_entity_index = i;
         if (_entities[i]->biology_check_death()) continue;
 
@@ -387,6 +389,12 @@ int Simulation::tick(int print){
 
     cout << _environment->getTileAmountX() << "x" << _environment->getTileAmountY() << endl;
     if (print){
+        int width = _environment->getTileAmountX();
+        _entity_pos_map.clear();
+        for (const auto& e : _entities) {
+            if (!e->biology_check_death())
+                _entity_pos_map[e->get_coordinates().y * width + e->get_coordinates().x] = e.get();
+        }
         display_environment();
     }
 
@@ -425,7 +433,6 @@ std::vector<double> Simulation::filter_perception(std::vector<double> perception
 
     if (tile_count >= 3)
     {
-        tail_count = 3;
         tile_count -= 3;
     }
     
@@ -491,22 +498,14 @@ std::vector<double> Simulation::filter_perception(std::vector<double> perception
         mark_tile(0, 0);
     }
 
-    std::vector<double> filtered;
-    filtered.reserve((tile_count - ignored + tail_count));
     for (int i = 0; i < tile_count; ++i)
     {
-        if (!ignore[i])
+        if (ignore[i])
         {
-            filtered.push_back(perception[i]);
+            perception[i] = 0.0;
         }
     }
-
-    if (tail_count > 0)
-    {
-        filtered.insert(filtered.end(), perception.end() - tail_count, perception.end());
-    }
-
-    return filtered;
+    return perception;
 }
 
 void Simulation::biologySetCoordinates(Vector2d coords)
@@ -554,14 +553,8 @@ void Simulation::display_environment() const
         {
             double tile_value = _environment->getTileValue(Vector2d(x, y), 0);
 
-            Entity* entity_here = nullptr;
-            for (const auto& e : _entities) {
-                if (!e->biology_check_death() &&
-                    e->get_coordinates().x == x && e->get_coordinates().y == y) {
-                    entity_here = e.get();
-                    break;
-                }
-            }
+            auto it = _entity_pos_map.find(y * _environment->getTileAmountX() + x);
+            Entity* entity_here = (it != _entity_pos_map.end()) ? it->second : nullptr;
 
             if (entity_here)
             {

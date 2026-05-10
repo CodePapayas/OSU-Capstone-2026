@@ -282,6 +282,8 @@ void Biology::update()
     _energy = std::max(_energy, 0.0);
     _water = std::max(_water, 0.0);
 
+    _dehydration_ticks = (_water <= 0.0) ? _dehydration_ticks + 1 : 0;
+
     std::cout << "Tick energy loss: " << tick_energy_drain() << std::endl;
     std::cout << "Tick Health loss: " << tick_health_drain() << std::endl;
 }
@@ -291,7 +293,7 @@ bool Biology::check_death() const
     /**
      * Checks if the organism should be considered dead.
      */
-    return _health <= 0.0;
+    return _health <= 0.0 || _dehydration_ticks >= 3;
 }
 
 // ==================== Display & Debugging ====================
