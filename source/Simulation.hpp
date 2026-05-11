@@ -33,9 +33,13 @@ private:
 
     uint64_t m_tick = 0;
     std::unique_ptr<CircularBuffer<SimulationState>> m_stateHistory;
+    int  m_displayInterval     = 1;   // render every N ticks
+    bool m_paused              = false;
+    bool m_fastForwardActive   = false;
+    int  m_fastForwardInterval = 10;
+
 #ifdef ALIFE_USE_DB
     std::shared_ptr<AutoSave>                        m_autoSave;
-
     SimulationSavePayload buildSavePayload();
 #endif
 
@@ -130,17 +134,25 @@ public:
 
 #ifdef ALIFE_USE_DB
     void enableAutoSave(std::shared_ptr<AutoSave> autoSave);
-
     void disableAutoSave();
-
     const AutoSaveStats* autoSaveStats() const;
 #endif
 
     uint64_t currentTick() const { return m_tick; }
 
     const SimulationState* latestState() const;
-
     int getWorldSize() const;
     const ResourceManager* getResourceManager() const;
     void reset();
+
+    // display interval: render grid every N ticks; fast-forward overrides with its own interval
+    void setDisplayInterval(int interval);
+    int  getDisplayInterval()     const { return m_displayInterval; }
+
+    void setPaused(bool paused);           // tick() returns 2 while paused
+    bool isPaused()               const { return m_paused; }
+
+    void setFastForward(bool enabled, int interval = 0); // interval=0 keeps current FF interval
+    bool isFastForwarding()       const { return m_fastForwardActive; }
+    int  getFastForwardInterval() const { return m_fastForwardInterval; }
 };

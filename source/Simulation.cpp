@@ -190,6 +190,8 @@ void Simulation::execute_movement(int direction){
 }   
 
 int Simulation::tick(){
+    if (m_paused) return 2; // Paused — don't advance; caller should wait and retry
+
     ++m_tick;
 
     // Get the perception for the primary entity and pass it to the brain to get a decision
@@ -197,7 +199,14 @@ int Simulation::tick(){
     int decision = pass_perception_to_brain();
     interpret_decision(decision);
     get_primary_entity()->update_biology(); // Handle biology updates like energy drain, health regen, etc.
-    display_environment();
+
+    // Only render the environment grid at the configured display interval.
+    // In fast-forward mode use the (larger) fast-forward interval.
+    int activeInterval = m_fastForwardActive ? m_fastForwardInterval : m_displayInterval;
+    if (m_tick % activeInterval == 0) {
+        display_environment();
+    }
+
     bool entity_dead = get_primary_entity()->biology_check_death();
     if (entity_dead) {
         std::cout << "Entity has died. Ending simulation." << std::endl;
@@ -280,6 +289,23 @@ void Simulation::reset()
     m_tick = 0;
     m_stateHistory = std::make_unique<CircularBuffer<SimulationState>>(STATE_HISTORY_CAPACITY);
     initialize();
+}
+
+void Simulation::setDisplayInterval(int interval)
+{
+    m_displayInterval = std::max(1, interval);
+}
+
+void Simulation::setPaused(bool paused)
+{
+    m_paused = paused;
+}
+
+void Simulation::setFastForward(bool enabled, int interval)
+{
+    m_fastForwardActive = enabled;
+    if (interval > 0)
+        m_fastForwardInterval = interval;
 }
 
 #ifdef ALIFE_USE_DB

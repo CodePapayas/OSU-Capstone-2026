@@ -103,13 +103,13 @@ void DataVisualizer::renderAsciiChart(const vector<double>& values, const string
     for (int r = rows; r >= 0; --r) {
         double threshold = minVal + (maxVal - minVal) * (1.0 * r / rows);
         
-        // Print y-axis labels on 3 specific rows, top, middle, bottom
+        // Print y-axis labels on 3 specific rows: top, middle, bottom
         if (r == rows) {
-            cout << setw(8) << right << (int)maxVal << " | ";
+            cout << setw(8) << right << fixed << setprecision(3) << maxVal << " | ";
         } else if (r == rows / 2) {
-            cout << setw(8) << right << (int)(minVal + (maxVal - minVal) / 2) << " | ";
+            cout << setw(8) << right << fixed << setprecision(3) << (minVal + (maxVal - minVal) / 2.0) << " | ";
         } else if (r == 0) {
-            cout << setw(8) << right << (int)minVal << " | ";
+            cout << setw(8) << right << fixed << setprecision(3) << minVal << " | ";
         } else {
             cout << "         | ";
         }
@@ -125,9 +125,9 @@ void DataVisualizer::renderAsciiChart(const vector<double>& values, const string
         cout << "\n";
     }
     
-    // Draw bottom X Axis
+    // Draw bottom X axis, width matches the 8-char y-label + " | " prefix
     cout << "         +";
-    for(int i=0; i < cols; ++i) cout << "-";
+    for (int i = 0; i < cols; ++i) cout << "-";
     cout << ">\n\n";
 }
 

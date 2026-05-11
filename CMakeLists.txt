@@ -43,4 +43,5 @@ endif()
 
 if(TARGET alife_persistence)
     target_link_libraries(main_exe PRIVATE alife_persistence)
+    target_compile_definitions(main_exe PRIVATE ALIFE_USE_DB)
 endif()
