@@ -6,6 +6,7 @@
 #include "../environment/Environment.h"
 #include "../entity/decision_center/entity.hpp"
 #include "../entity/perception_movement/perception.hpp"
+#include "../environment/PerlinNoise.hpp"
 
 // Forward declarations
 class Brain;
