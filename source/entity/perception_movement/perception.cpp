@@ -68,6 +68,46 @@ std::vector<double> Perception::extract_tile_values_in_radius_of_type(
                     tile_values.push_back(0.0); // No water resource, push default value
                 }
             }
+            else if (tile_type=="Chemical_1") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::CHEMICAL_1) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
+                }
+                else {
+                    tile_values.push_back(0.0); // No chemical_1 resource, push default value
+                }
+            }
+            else if (tile_type=="Chemical_2") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::CHEMICAL_2) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
+                }
+                else {
+                    tile_values.push_back(0.0); // No chemical_2 resource, push default value
+                }
+            }
+            else if (tile_type=="Chemical_3") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::CHEMICAL_3) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
+                }
+                else {
+                    tile_values.push_back(0.0); // No chemical_3 resource, push default value
+                }
+            }
+            else if (tile_type=="Chemical_4") {
+                ResourceNode* resource = manager.getResourceAtPosition(Position(tile_x, tile_y));
+                if (resource && resource->getType() == ResourceType::CHEMICAL_4) {
+                    double energyValue = resource->getEnergyValue();
+                    tile_values.push_back(energyValue);
+                }
+                else {
+                    tile_values.push_back(0.0); // No chemical_4 resource, push default value
+                }
+            }
             else {
                 if (tile_type == current_tile_type) {
                     double tile_value = environment.getTileValue(position, 0);

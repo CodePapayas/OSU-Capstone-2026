@@ -27,7 +27,7 @@ struct Position {
     bool operator==(const Position& other) const { return x == other.x && y == other.y; }
 };
 
-enum class ResourceType { FOOD, WATER, MINERAL, PLANT, CUSTOM };
+enum class ResourceType { FOOD, WATER,CHEMICAL_1,CHEMICAL_2,CHEMICAL_3,CHEMICAL_4};
 
 /**
  * ResourceNode - Consumable energy sources in environment (renewable or depleting)

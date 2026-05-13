@@ -192,6 +192,17 @@ void Entity::biology_rem_health(double amount)
     _biology->add_health(amount * -1);
 }
 
+void Entity::biology_consume_chemical(const std::string& chem, double quantity)
+{
+    if (_biology == nullptr)
+    {
+        std::cerr << "Warning: Biology is nullptr, cannot consume chemical" << std::endl;
+        return;
+    }
+    double health_adjustment = _biology->add_chemical(chem, quantity);
+    std::cout << "Creature consumed " << quantity << " of chemical " << chem 
+              << " for a health adjustment of " << health_adjustment << std::endl;
+}
 bool Entity::biology_check_death() const
 {
     if (_biology == nullptr)

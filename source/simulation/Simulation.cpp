@@ -30,7 +30,7 @@ void Simulation::initialize(int num_entities)
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    std::vector<int> layer_sizes = {128, 200, 200, 7};
+    std::vector<int> layer_sizes = {228, 300, 300, 7};
     for (int i = 0; i < num_entities; ++i) {
         auto entity = std::make_unique<Entity>();
         entity->set_coordinates(Vector2d(rand() % _environment->getTileAmountX(),
@@ -57,7 +57,16 @@ void Simulation::seed_resources()
         for (int y = 0; y < _environment->getTileAmountY(); y += 1) {
             float randomValue = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
             if (randomValue > 0.9){ // 10% chance to create a resource
-                ResourceType type = static_cast<ResourceType>(rand() % 2); // Randomly choose a resource type
+                // 20% chance to create 1 of 4 chemical nodes
+                int rType = rand()%5;
+                if (rType ==4) {
+                    rType= rand()%4+2;
+                }
+                // Otherwise a coinflip between water and energy
+                else{
+                    rType = rand() % 2;
+                }
+                ResourceType type = static_cast<ResourceType>(rType); // Randomly choose a resource type
                 double energyValue = static_cast<double>(rand()) / static_cast<double>(RAND_MAX); // Random energy value between 0 and 1
                 bool renewable = (rand() % 2) == 0; // Randomly decide if it's renewable
                 _resource_manager->createResource(Position(x, y), type, energyValue, renewable);
@@ -351,6 +360,22 @@ void Simulation::consumption(){
         } else if (resource->getType() == ResourceType::WATER) {
             std::cout << "Entity consumed WATER resource for " << energyGained << " raw water." << std::endl;
             entity->biology_drink(energyGained); // Add the consumed energy to the entity's biology
+        } 
+        else if (resource->getType() == ResourceType::CHEMICAL_1) {
+            std::cout << "Entity consumed CHEMICAL 1 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_1", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_2) {
+            std::cout << "Entity consumed CHEMICAL 2 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_2", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_3) {
+            std::cout << "Entity consumed CHEMICAL 3 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_3", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_4) {
+            std::cout << "Entity consumed CHEMICAL 4 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_4", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
         }
     }
     else{
