@@ -28,7 +28,12 @@ double relu(double x) {
 // computes the sum of element-wise products of two vectors.
 double dot_product(std::vector<double> v1, std::vector<double> v2) {
     double result = 0;
-    for (int i = 0; i < v1.size(); ++i) {
+
+    // temporary fix to an issue regarding the perception inputs through V2 not matching the size of the weights through V1
+    // currently, will not work if the sizes are not equal, so we are just capping it until we find a better way to pad out values with understanding
+
+    int min = (v1.size() < v2.size()) ? v1.size() : v2.size();
+    for (int i = 0; i < min; ++i) {
         result += v1[i] * v2[i];
     }
     return result;
@@ -69,6 +74,14 @@ std::vector<double> ActivationLayerReLU::forward(const std::vector<double>& inpu
         for (int j = 0; j < n_in; ++j) {
             weight_row[j] = weights[i * n_in + j];
         }
+
+        // concerns for weigh-perception mismatching visualized
+
+        // 0, 0, 2, 1, 0, 2 
+        // 0, 1, 2, 1, 0, 1
+
+        // 0, 0, 2, 1, 0, 2 
+        // 1, 2, 1, 1
 
         double z = dot_product(weight_row, input) + biases[i];
 
