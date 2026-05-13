@@ -15,7 +15,8 @@ using namespace std;
 // Build the libpq keyword=value connection string
 string DBConnectionParams::toConnectionString() const {
     string s;
-    s += "host="   + host   + " ";
+    if (!host.empty())
+        s += "host=" + host + " ";
     s += "port="   + port   + " ";
     s += "dbname=" + dbname + " ";
     s += "user="   + user   + " ";
@@ -27,7 +28,7 @@ string DBConnectionParams::toConnectionString() const {
 
 static string envOr(const char* varName, const string& fallback) {
     const char* val = getenv(varName);
-    return (val && *val) ? string(val) : fallback;  // Use env var if set, else default
+    return val ? string(val) : fallback;  // Use env var if set (even empty), else default
 }
 
 DBConnectionParams DBConnectionParams::fromEnv() {

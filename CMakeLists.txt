@@ -5,6 +5,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(PostgreSQL REQUIRED)
+
+add_library(alife_persistence STATIC
+    src/db_connector.cpp
+    src/save_manager.cpp
+    src/auto_save.cpp
+)
+target_include_directories(alife_persistence PUBLIC include ${PostgreSQL_INCLUDE_DIRS})
+target_link_libraries(alife_persistence PUBLIC ${PostgreSQL_LIBRARIES})
+
 set(DECISION_CENTER_SOURCES
     source/entity/decision_center/brain.cpp
     source/entity/decision_center/entity.cpp
@@ -31,6 +41,8 @@ add_executable(main
     ${PERCEPTION_MOVEMENT_SOURCES}
     ${DECISION_CENTER_SOURCES}
 )
+target_include_directories(main PRIVATE include)
+target_link_libraries(main PRIVATE alife_persistence)
 
 # Include directories
 include_directories(

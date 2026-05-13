@@ -11,10 +11,12 @@
 #include <memory>
 #include <vector>
 #include "source/simulation/Simulation.hpp"
-#include "source/simulation/circular_buffer.h"
-#include "source/simulation/simulation_state.h"
+#include "circular_buffer.h"
+#include "simulation_state.h"
 #include "source/entity/decision_center/biology.hpp"
 #include "source/entity/decision_center/brain.hpp"
+#include "db_connector.h"
+#include "save_manager.h"
 
 
 /** Capture a lightweight SimulationState snapshot from the live simulation. */
@@ -210,6 +212,31 @@ void alphaDemonstration(){
     }
 }
 
+static SimulationSavePayload build_db_payload(Simulation& sim, uint64_t tick,
+                                               const std::string& slotName,
+                                               const CircularBuffer<SimulationState>* history) {
+    SimulationSavePayload p;
+    p.slotName       = slotName;
+    p.description    = "autosave";
+    p.tick           = tick;
+    p.realTimestamp  = static_cast<double>(std::time(nullptr));
+    p.stateHistory   = history;
+
+    Entity* primary = sim.get_primary_entity();
+    if (primary) {
+        AgentSaveData a;
+        a.agentId = static_cast<uint64_t>(primary->get_id());
+        auto coords  = primary->get_coordinates();
+        a.posX    = static_cast<int32_t>(coords.x);
+        a.posY    = static_cast<int32_t>(coords.y);
+        auto metrics = primary->biology_get_metrics();
+        a.energy  = metrics.count("Energy") ? metrics.at("Energy") : 0.0;
+        p.totalEnergy = a.energy;
+        p.agents.push_back(std::move(a));
+    }
+    return p;
+}
+
 int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, const std::string& saveDir){
 // ---- Initialise simulation ----
     Simulation sim;
@@ -221,6 +248,17 @@ int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, con
     CircularBuffer<SimulationState> stateHistory(bufferCapacity);
     std::cout << "Circular buffer initialised (capacity: "
               << bufferCapacity << ")" << std::endl;
+
+    // ---- Connect to PostgreSQL ----
+    std::shared_ptr<SaveManager> saveManager;
+    try {
+        auto db = std::make_shared<DBConnector>(DBConnectionParams::fromEnv());
+        saveManager = std::make_shared<SaveManager>(db);
+        saveManager->initSchema("db/schema.sql");
+        std::cout << "[DB] Connected and schema ready." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[DB] Connection failed — running without DB: " << e.what() << std::endl;
+    }
 
     if (autosaveInterval > 0) {
         std::filesystem::create_directories(saveDir);
@@ -247,6 +285,17 @@ int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, con
                       << " -> " << path
                       << "  (buffer: " << stateHistory.size()
                       << "/" << stateHistory.capacity() << ")" << std::endl;
+
+            if (saveManager) {
+                try {
+                    std::string slot = "autosave_tick_" + std::to_string(i + 1);
+                    auto payload = build_db_payload(sim, static_cast<uint64_t>(i + 1), slot, &stateHistory);
+                    saveManager->save(payload);
+                    std::cout << "[DB] Saved slot '" << slot << "'" << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "[DB] Save failed: " << e.what() << std::endl;
+                }
+            }
         }
 
         if (result == -1) {
@@ -256,6 +305,16 @@ int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, con
                                  + std::to_string(i + 1) + ".txt";
                 save_buffer_to_file(stateHistory, path);
                 std::cout << "[AUTOSAVE] Final save -> " << path << std::endl;
+            }
+            if (saveManager) {
+                try {
+                    std::string slot = "autosave_final_tick_" + std::to_string(i + 1);
+                    auto payload = build_db_payload(sim, static_cast<uint64_t>(i + 1), slot, &stateHistory);
+                    saveManager->save(payload);
+                    std::cout << "[DB] Final save -> slot '" << slot << "'" << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "[DB] Final save failed: " << e.what() << std::endl;
+                }
             }
             break;
         }

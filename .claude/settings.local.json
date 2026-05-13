@@ -12,7 +12,9 @@
       "Bash(./test_persistence *)",
       "Read(//etc/postgresql/**)",
       "Read(//var/lib/postgresql/**)",
-      "Bash(psql *)"
+      "Bash(psql *)",
+      "Bash(cmake -B build -S .)",
+      "Bash(cmake *)"
     ]
   }
 }

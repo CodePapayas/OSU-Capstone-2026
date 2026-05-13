@@ -171,16 +171,16 @@ Entity* Simulation::get_primary_entity() const
     return _entities[_current_entity_index].get();
 }
 
-std::vector<double> Simulation::get_perception() const
-{
-    Perception::SensoryInput val = _perception->perceive_local_tiles(
-        get_primary_entity()->get_coordinates().x,
-        get_primary_entity()->get_coordinates().y,
-        *_environment,
-        std::max(2, static_cast<int>(4 * get_primary_entity()->biology_get_genetic_value("Vision")))
-    );
-    return val.tile_values;
-}
+// std::vector<double> Simulation::get_perception() const
+// {
+//     Perception::SensoryInput val = _perception->perceive_local_tiles(
+//         get_primary_entity()->get_coordinates().x,
+//         get_primary_entity()->get_coordinates().y,
+//         *_environment,
+//         std::max(2, static_cast<int>(4 * get_primary_entity()->biology_get_genetic_value("Vision")))
+//     );
+//     return val.tile_values;
+// }
 
 std::vector<double> Simulation::get_perception_expanded(const std::string& type) const
 {
@@ -365,14 +365,9 @@ int Simulation::tick(int print){
         std::cout.setstate(std::ios_base::failbit);
     }
 
-<<<<<<< HEAD
-    int entity_count = (int)_entities.size();
-    for (int i = 0; i < entity_count; ++i) {
-=======
     _environment->updateTiles();
 
     for (int i = 0; i < (int)_entities.size(); ++i) {
->>>>>>> origin/main
         _current_entity_index = i;
         if (_entities[i]->biology_check_death()) continue;
 
@@ -428,10 +423,6 @@ std::vector<double> Simulation::filter_perception(std::vector<double> perception
     int tail_count = 0;
     int grid_size = static_cast<int>(std::sqrt(tile_count));
 
-    if (tile_count >= 3)
-    {
-        tile_count -= 3;
-    }
     
     if (grid_size % 2 == 0)
     {
