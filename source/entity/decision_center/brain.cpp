@@ -81,7 +81,7 @@ ActivationLayerReLU::ActivationLayerReLU(int input_size, int output_size) {
 
 
     for (double& b : biases) {
-        b = dist(gen);
+        b = 0.01;
     }
 
     for (double& w : weights) {

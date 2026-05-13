@@ -251,7 +251,7 @@ double Biology::tick_energy_drain()
     // Calculate the drain: sqrt of sum, divided by number of traits, adjusted for mass
     total = std::pow(total, 0.5) / static_cast<double>(_genetic_values.size());
     total = total * (1.0 - std::pow(_genetic_values["Mass"], 2.0));
-    double drain = std::max(total * ENERGY_DRAIN_COEFFICIENT,.02);
+    double drain = std::max(total * ENERGY_DRAIN_COEFFICIENT,.001);
     add_energy(drain * -1);
     return total;
 }
