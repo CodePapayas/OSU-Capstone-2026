@@ -11,6 +11,7 @@
 #include "../entity/decision_center/biology_constants.hpp"
 #include <algorithm>
 #include <cmath>
+#include <vector>
 #include <iostream>
 #include <format>
 
@@ -28,18 +29,6 @@ void Simulation::initialize(int num_entities)
     int size = 32;
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
-
-    PerlinNoise2d _perlin = PerlinNoise2d(1234, 0.025, 1.0, 8);
-    std::cout << "Perlin noise generated!" << std::endl;
-
-    for(int x = 0; x < _environment->getTileAmountX(); x++){
-        for(int y = 0; y < _environment->getTileAmountY(); y++){
-            Vector2d pos = Vector2d(x,y);
-            double curr_noise_val = _perlin.SampleLayered(pos);
-            _environment->setTileValue(pos, curr_noise_val, 0);
-        }
-    }
-    std::cout << "Environment noise loaded!" << std::endl;
 
     std::vector<int> layer_sizes = {128, 200, 200, 7};
     for (int i = 0; i < num_entities; ++i) {
@@ -237,12 +226,14 @@ int Simulation::pass_perception_to_brain()
                 type_str = "TERRAIN_3";
                 break;
         }
+
+        // FILTERS OUT TOO MANY TILES, is causing a size mismatch in the dot product function in the brain module, causing vector subscript out-of-bounds issue
         std::vector<double> perception = get_perception_expanded(type_str);
         // Get the strength of the entities vision and determine how many tiles to ignore
         float vision_value = entity->biology_get_genetic_value("Vision");
         int tilesToIgnore = std::max(static_cast<int>(25.0 - (25 * vision_value)), 1); // at max vision (1.0), ignore 0 tiles, at min vision (0.0) ignore 24 tiles (only sees own tile) 
     
-    // Add the filtered values to the master perception list
+        // Add the filtered values to the master perception list
         std::vector<double> adaptedVision = filter_perception(perception, tilesToIgnore);
         filteredPerception.insert(filteredPerception.end(), adaptedVision.begin(), adaptedVision.end());  
     }
@@ -372,6 +363,8 @@ int Simulation::tick(int print){
     if (!print){
         std::cout.setstate(std::ios_base::failbit);
     }
+
+    _environment->updateTiles();
 
     for (int i = 0; i < (int)_entities.size(); ++i) {
         _current_entity_index = i;
