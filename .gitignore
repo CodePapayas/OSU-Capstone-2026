@@ -43,6 +43,7 @@
 # Build directories
 **/build/
 **/builds/
+**/build_main/
 **/cmake-build-*/
 
 # CMake build artifacts
@@ -62,6 +63,10 @@
 .cache/
 .idea/
 .vscode/
+**/__pycache__/
+*.pyc
+**/imgui.ini
+main
 
 # ignore shell folder in brain
 brain/shells/

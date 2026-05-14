@@ -1,4 +1,4 @@
-Kai Lindskog, Zachary Wilkins-Olson, Zachary Sherman, Shane Bliss, Dillon Stickler
+Kai Lindskog
 Oregon State University
 CS 462
 
@@ -130,3 +130,54 @@ make -j4
 ./test_persistence
 ./test_auto_save
 ```
+
+## Running the simulation with live stats
+
+Always run from the project root so `db/schema.sql` resolves correctly.
+
+**Terminal 1 — run the simulation:**
+```
+./build_main/main_exe
+```
+
+At startup you will be prompted to set the display interval:
+```
+Display frame every X ticks [default 1]:
+```
+Enter a number (e.g. `5`) to render the grid every 5 ticks, or press Enter to render every tick.
+
+**Runtime controls** (press without Enter while the simulation is running):
+
+| Key | Action |
+|-----|--------|
+| `P` | Pause / Resume |
+| `F` | Toggle fast forward — renders every 10 ticks regardless of the display interval |
+| `Q` | Quit and print the final tick count |
+
+**Terminal 2 — run the live visualizer** (polls the DB and redraws every 2 seconds by default):
+```
+./build_main/data_visualization/live_visualizer_tool
+```
+
+Optional arguments (no brackets):
+```
+./build_main/data_visualization/live_visualizer_tool <poll_interval_seconds> <history_limit>
+# e.g. poll every 2 seconds, show last 60 ticks:
+./build_main/data_visualization/live_visualizer_tool 2 60
+```
+
+Both executables use the same database env vars (`ALIFE_DB_HOST`, `ALIFE_DB_PORT`, `ALIFE_DB_NAME`, `ALIFE_DB_USER`) — make sure they are set in both terminals.
+
+## Project structure
+
+```
+include/        headers (circular buffer, fitness, resource node, save system)
+src/            implementations
+db/             PostgreSQL schema
+persistence/    CMakeLists.txt for the save/load module
+test/           integration tests
+decision_center/ brain / neural decision making
+```
+
+
+
