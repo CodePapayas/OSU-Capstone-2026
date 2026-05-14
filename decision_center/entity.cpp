@@ -109,9 +109,7 @@ void Entity::biology_eat(double amount)
         std::cerr << "Warning: Biology is nullptr, cannot eat" << std::endl;
         return;
     }
-    double net_energy = _biology->eat_energy(amount);
-    std::cout << "Creature consumed " << amount << " energy for net " 
-              << net_energy << " energy" << std::endl;
+    _biology->eat_energy(amount);
 }
 
 void Entity::biology_add_energy(double amount)
@@ -141,9 +139,7 @@ void Entity::biology_drink(double amount)
         std::cerr << "Warning: Biology is nullptr, cannot drink" << std::endl;
         return;
     }
-    double net_water = _biology->drink_water(amount);
-    std::cout << "Creature consumed " << amount << " water for net " 
-              << net_water << " water" << std::endl;
+    _biology->drink_water(amount);
 }
 
 void Entity::biology_add_water(double amount)
@@ -221,8 +217,6 @@ std::unordered_map<std::string, double> Entity::biology_get_metrics()
     double energy = _biology->get_energy();
     double water = _biology->get_water();
     
-    _biology->print_vals();
-    
     metrics["Health"] = health;
     metrics["Energy"] = energy;
     metrics["Water"] = water;
@@ -252,9 +246,7 @@ double Entity::biology_get_genetic_value(const std::string& gene)
 
     try
     {
-        double val = _biology->get_efficiency(gene);
-        std::cout << gene << ": " << val << std::endl;
-        return val;
+        return _biology->get_efficiency(gene);
     }
     catch (const std::out_of_range&)
     {
@@ -304,9 +296,6 @@ std::pair<double, double> Entity::biology_movement(const std::string& terrain)
     {
         wdrain = 0.0;
     }
-
-    std::cout << "Energy drain for " << terrain << ": " << edrain << std::endl
-              << "Water drain for " << terrain << ": " << wdrain << std::endl;
 
     return std::make_pair(edrain, wdrain);
 }

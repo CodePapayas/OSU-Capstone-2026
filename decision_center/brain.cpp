@@ -125,6 +125,11 @@ const std::vector<double>& ActivationLayerReLU::get_biases() const{
     return biases;
 }
 
+void ActivationLayerReLU::ActivationLayerReLUOffsping(const std::vector<double>& w, const std::vector<double>& b) {
+    weights = w;
+    biases  = b;
+}
+
 // returns the flattened weight matrix (stored row-major)
 const std::vector<double>& ActivationLayerReLU::get_weights() const{
     return weights;

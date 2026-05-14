@@ -75,6 +75,11 @@ std::unordered_map<std::string, double> Biology::get_genetic_vals() const
     return _genetic_values;
 }
 
+void Biology::set_genetic_vals(const std::unordered_map<std::string, double>& vals)
+{
+    _genetic_values = vals;
+}
+
 // ==================== Setters ====================
 
 void Biology::set_coordinates(const Vector2d& coords)
@@ -273,8 +278,8 @@ void Biology::update()
 
     _dehydration_ticks = (_water <= 0.0) ? _dehydration_ticks + 1 : 0;
 
-    std::cout << "Tick energy loss: " << tick_energy_drain() << std::endl;
-    std::cout << "Tick Health loss: " << tick_health_drain() << std::endl;
+    tick_energy_drain();
+    tick_health_drain();
 }
 
 bool Biology::check_death() const

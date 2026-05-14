@@ -13,6 +13,7 @@ set(SOURCES
     brain.cpp
     entity.cpp
     biology.cpp
+    mutate.cpp
 )
 
 # ==================== Main Library ====================

@@ -24,6 +24,7 @@ public:
     int get_biases_count() const { return biases.size(); }
     const std::vector<double>& get_weights() const;
     const std::vector<double>& get_biases() const;
+    void ActivationLayerReLUOffsping(const std::vector<double>& weights, const std::vector<double>& biases);
 };
 
 // Brain Class
@@ -39,4 +40,5 @@ public:
     int decide(const std::vector<double>& input);
     int softDecide(const std::vector<double> &input);
     int get_layer_count() const { return layers.size(); }
+    std::vector<ActivationLayerReLU>& get_layers();
 };

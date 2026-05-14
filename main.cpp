@@ -44,10 +44,23 @@ static int pollKey()
 }
 
 int main() {
+    int numEntities = 5;
+    {
+        std::cout << "Population size [default 5]: ";
+        std::string line;
+        std::getline(std::cin, line);
+        if (!line.empty()) {
+            try {
+                int v = std::stoi(line);
+                if (v >= 1) numEntities = v;
+            } catch (...) {}
+        }
+    }
+
     Simulation sim;
-    sim.initialize();
+    sim.initialize(numEntities);
     std::cout << "\nSimulation setup complete with "
-              << sim.get_entity_count() << " entity!\n";
+              << sim.get_entity_count() << " entities!\n";
 
     {
         int displayInterval = 1;
@@ -62,6 +75,30 @@ int main() {
         }
         sim.setDisplayInterval(displayInterval);
         std::cout << "Display interval: every " << displayInterval << " tick(s).\n";
+    }
+
+    {
+        int renderDelay = 150;
+        std::cout << "Render delay ms [default 150]: ";
+        std::string line;
+        std::getline(std::cin, line);
+        if (!line.empty()) {
+            try {
+                int v = std::stoi(line);
+                if (v >= 0) renderDelay = v;
+            } catch (...) {}
+        }
+        sim.setRenderDelay(renderDelay);
+    }
+
+    {
+        std::cout << "God mode (entity never dies) [y/N]: ";
+        std::string line;
+        std::getline(std::cin, line);
+        if (!line.empty() && (line[0] == 'y' || line[0] == 'Y')) {
+            sim.setGodMode(true);
+            std::cout << "[GOD MODE] Entity immortal — stats refilled every tick.\n";
+        }
     }
 
     auto db = std::make_shared<DBConnector>(DBConnectionParams::fromEnv());

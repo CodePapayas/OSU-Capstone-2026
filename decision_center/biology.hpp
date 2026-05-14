@@ -87,6 +87,7 @@ public:
      * @return A map containing the genetic values
      */
     std::unordered_map<std::string, double> get_genetic_vals() const;
+    void set_genetic_vals(const std::unordered_map<std::string, double>& vals);
 
     // ==================== Setters ====================
 

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include "Environment.h"
 #include "../decision_center/entity.hpp"
 #include "../perception_movement/perception.hpp"
@@ -35,13 +36,21 @@ private:
     std::vector<std::unique_ptr<Entity>> _entities;
     std::unique_ptr<Perception> _perception;
     std::unique_ptr<ResourceManager> _resource_manager;
-    size_t _pop_cap = 0;
+    size_t _pop_cap = 50;
+
+    int  _current_entity_index = 0;
+    bool _debug = false;
+    std::unordered_map<int, Entity*> _entity_pos_map;
+    std::unordered_set<int> _prev_entity_positions;
+    bool m_firstRender = true;
+    int  m_renderDelayMs = 150;
 
     uint64_t m_tick = 0;
     std::unique_ptr<CircularBuffer<SimulationState>> m_stateHistory;
     int  m_displayInterval     = 1;   // render every N ticks
     bool m_paused              = false;
     bool m_fastForwardActive   = false;
+    bool m_godMode             = false;
     int  m_fastForwardInterval = 10;
 
 #ifdef ALIFE_USE_DB
@@ -132,7 +141,7 @@ public:
      * Tiles are colored blue (low values) to red (high values)
      * Entities are displayed as white "X"s
      */
-    void display_environment() const;
+    void display_environment(int alive = -1) const;
 
     /**
      * @brief Gets the vision value of the primary entity, which may be used to filter perception in the future
@@ -141,6 +150,12 @@ public:
     float get_vision_value() const;
 
     std::vector<double> filter_perception(std::vector<double> perception, int tilesToIgnore) const;
+    std::vector<double> get_perception_expanded(const std::string& type) const;
+
+    Entity* reproduce(Entity* p1, Entity* p2);
+    void set_primary_entity(const Entity& entity);
+    void set_primary_entity_random();
+    void consumption();
 
 #ifdef ALIFE_USE_DB
     void enableAutoSave(std::shared_ptr<AutoSave> autoSave);
@@ -165,4 +180,9 @@ public:
     void setFastForward(bool enabled, int interval = 0); // interval=0 keeps current FF interval
     bool isFastForwarding()       const { return m_fastForwardActive; }
     int  getFastForwardInterval() const { return m_fastForwardInterval; }
+
+    void setGodMode(bool enabled) { m_godMode = enabled; }
+    bool isGodMode()        const { return m_godMode; }
+
+    void setRenderDelay(int ms)   { m_renderDelayMs = ms; }
 };

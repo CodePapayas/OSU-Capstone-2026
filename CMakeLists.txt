@@ -7,14 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(PostgreSQL REQUIRED)
 
-add_library(alife_persistence STATIC
-    src/db_connector.cpp
-    src/save_manager.cpp
-    src/auto_save.cpp
-)
-target_include_directories(alife_persistence PUBLIC include ${PostgreSQL_INCLUDE_DIRS})
-target_link_libraries(alife_persistence PUBLIC ${PostgreSQL_LIBRARIES})
-
 # Add subdirectories for modules
 add_subdirectory(decision_center)
 add_subdirectory(persistence)
@@ -54,18 +46,17 @@ endif()
 # filter_perception stack-overflow regression tests
 enable_testing()
 add_executable(test_filter_perception
-    source/simulation/test_filter_perception.cpp
-    source/simulation/Simulation.cpp
-    source/environment/Environment.cpp
-    source/environment/resource_node.cpp
+    test_filter_perception.cpp
+    source/Simulation.cpp
+    source/Environment.cpp
+    source/resource_node.cpp
     ${PERCEPTION_MOVEMENT_SOURCES}
-    ${DECISION_CENTER_SOURCES}
 )
 target_include_directories(test_filter_perception PRIVATE
-    ${PROJECT_SOURCE_DIR}/source/entity/decision_center
+    ${PROJECT_SOURCE_DIR}/decision_center
     ${PROJECT_SOURCE_DIR}/source
-    ${PROJECT_SOURCE_DIR}/source/entity/perception_movement
-    ${PROJECT_SOURCE_DIR}/source/entity/decision_center/tests
+    ${PROJECT_SOURCE_DIR}/perception_movement
+    ${PROJECT_SOURCE_DIR}/decision_center/tests
 )
 add_test(NAME FilterPerceptionTests COMMAND test_filter_perception)
 
