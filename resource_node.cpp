@@ -126,14 +126,6 @@ size_t ResourceManager::removeDepletedResources() {
     return initialCount - m_resources.size();  // How many we removed
 }
 
-vector<ResourceNode*> ResourceManager::getAllResources() const {
-    vector<ResourceNode*> result;
-    result.reserve(m_resources.size());
-    for (const auto& r : m_resources)
-        result.push_back(r.get());
-    return result;
-}
-
 double ResourceManager::getTotalEnergy() const {
     double total = 0.0;
     for (const auto& resource : m_resources) {

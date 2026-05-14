@@ -3,7 +3,7 @@
   Oregon State University
   CS 462 
 */
-#include "../include/resource_node.h"
+#include "resource_node.h"
 #include <algorithm>
 #include <limits>
 
@@ -126,20 +126,20 @@ size_t ResourceManager::removeDepletedResources() {
     return initialCount - m_resources.size();  // How many we removed
 }
 
-vector<ResourceNode*> ResourceManager::getAllResources() const {
-    vector<ResourceNode*> result;
-    result.reserve(m_resources.size());
-    for (const auto& r : m_resources)
-        result.push_back(r.get());
-    return result;
-}
-
 double ResourceManager::getTotalEnergy() const {
     double total = 0.0;
     for (const auto& resource : m_resources) {
         total += resource->getEnergyValue();
     }
     return total;
+}
+
+vector<ResourceNode*> ResourceManager::getAllResources() const {
+    vector<ResourceNode*> result;
+    result.reserve(m_resources.size());
+    for (const auto& r : m_resources)
+        result.push_back(r.get());
+    return result;
 }
 
 void ResourceManager::clear() {

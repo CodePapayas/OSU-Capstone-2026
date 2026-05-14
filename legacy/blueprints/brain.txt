@@ -1,0 +1,10 @@
+# BrainSpec v1
+# Adapted from brain.json in pond_spawn
+
+layers=5
+layer0=linear in=5 out=8
+layer1=activation func=tanh
+layer2=linear in=8 out=8
+layer3=activation func=tanh
+layer4=linear in=8 out=8
+

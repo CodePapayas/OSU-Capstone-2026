@@ -76,11 +76,7 @@ public:
     vector<ResourceNode*> findResourcesInRange(const Position& pos, int32_t range);
     ResourceNode* findNearestResource(const Position& pos, int32_t maxRange = 0);
     size_t removeDepletedResources();
-
-    // Returns non-owning pointers to every resource currently tracked.
-    // Used by the save system to snapshot resource state each auto-save tick.
-    vector<ResourceNode*> getAllResources() const;
-
+    
     size_t getResourceCount() const { return m_resources.size(); }
     double getTotalEnergy() const;
     void clear();
