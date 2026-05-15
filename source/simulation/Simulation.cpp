@@ -214,7 +214,7 @@ int Simulation::pass_perception_to_brain()
     // Get the value of all tiles
     //std::vector<double> perception = get_perception();
     std::vector<double> filteredPerception;
-    enum Types {FOOD=0, WATER=1, TERRAIN_1=2, TERRAIN_2=3, TERRAIN_3=4};
+    enum Types {FOOD=0, WATER=1, TERRAIN_1=2, TERRAIN_2=3, TERRAIN_3=4, CHEMICAL_1=5, CHEMICAL_2=6, CHEMICAL_3=7, CHEMICAL_4=8};
     // Iterate over each tile type and concatenate the perception values for each type together. This is a bit hacky but it works for now until we have a better system for encoding tile types and perception.
     for (int type = FOOD; type <= TERRAIN_3; type++) {
         std::string type_str;
@@ -233,6 +233,18 @@ int Simulation::pass_perception_to_brain()
                 break;
             case TERRAIN_3:
                 type_str = "TERRAIN_3";
+                break;
+            case CHEMICAL_1:
+                type_str = "CHEMICAL_1";
+                break;
+            case CHEMICAL_2:
+                type_str = "CHEMICAL_2";
+                break;
+            case CHEMICAL_3:
+                type_str = "CHEMICAL_3";
+                break;
+            case CHEMICAL_4:
+                type_str = "CHEMICAL_4";
                 break;
         }
 
