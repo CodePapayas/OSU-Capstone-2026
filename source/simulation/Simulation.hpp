@@ -40,7 +40,7 @@ public:
     /**
      * @brief Initializes the simulation with environment, entity, and brain. Currently all randos
      */
-    void initialize(int num_entities = 5);
+    void initialize(int num_entities);
 
     void seed_resources();
 

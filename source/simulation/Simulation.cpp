@@ -24,13 +24,11 @@ Simulation::~Simulation() = default;
 
 void Simulation::initialize(int num_entities)
 {
-    num_entities = std::max(1, std::min(num_entities, 50));
-
     int size = 32;
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    std::vector<int> layer_sizes = {228, 300, 300, 7};
+    std::vector<int> layer_sizes = {228, 300, 300, 8};
     for (int i = 0; i < num_entities; ++i) {
         auto entity = std::make_unique<Entity>();
         entity->set_coordinates(Vector2d(rand() % _environment->getTileAmountX(),
@@ -201,7 +199,7 @@ std::vector<double> Simulation::get_perception_expanded(const std::string& type)
         type
     );
 return type_values;
-}
+} 
 
 int Simulation::pass_perception_to_brain()
 {
@@ -408,7 +406,8 @@ int Simulation::tick(int print){
 
     _environment->updateTiles();
 
-    for (int i = 0; i < (int)_entities.size(); ++i) {
+    int entity_count = static_cast<int>(_entities.size());
+    for (int i = 0; i < entity_count; ++i) {
         _current_entity_index = i;
         if (_entities[i]->biology_check_death()) continue;
 
@@ -460,11 +459,6 @@ std::vector<double> Simulation::filter_perception(std::vector<double> perception
     int tail_count = 0;
     int grid_size = static_cast<int>(std::sqrt(tile_count));
 
-    if (tile_count >= 3)
-    {
-        tail_count = 3;
-        tile_count -= 3;
-    }
     
     if (grid_size % 2 == 0)
     {
@@ -529,12 +523,12 @@ std::vector<double> Simulation::filter_perception(std::vector<double> perception
     }
 
     std::vector<double> filtered;
-    filtered.reserve((tile_count - ignored + tail_count));
+    filtered.reserve((tile_count + tail_count));
     for (int i = 0; i < tile_count; ++i)
     {
         if (!ignore[i])
         {
-            filtered.push_back(perception[i]);
+            filtered.push_back(ignore[i] ? 0.0 : perception[i]);
         }
     }
 
