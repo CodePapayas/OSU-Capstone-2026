@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(PostgreSQL REQUIRED)
+
 # Add subdirectories for modules
 add_subdirectory(decision_center)
 add_subdirectory(persistence)
@@ -40,6 +42,26 @@ include_directories(
 if(TARGET decision_center)
     target_link_libraries(main_exe PRIVATE decision_center)
 endif()
+
+# filter_perception stack-overflow regression tests
+enable_testing()
+add_executable(test_filter_perception
+    test_filter_perception.cpp
+    source/Simulation.cpp
+    source/Environment.cpp
+    source/resource_node.cpp
+    ${PERCEPTION_MOVEMENT_SOURCES}
+)
+target_include_directories(test_filter_perception PRIVATE
+    ${PROJECT_SOURCE_DIR}/decision_center
+    ${PROJECT_SOURCE_DIR}/source
+    ${PROJECT_SOURCE_DIR}/perception_movement
+    ${PROJECT_SOURCE_DIR}/decision_center/tests
+)
+if(TARGET decision_center)
+    target_link_libraries(test_filter_perception PRIVATE decision_center)
+endif()
+add_test(NAME FilterPerceptionTests COMMAND test_filter_perception)
 
 if(TARGET alife_persistence)
     target_link_libraries(main_exe PRIVATE alife_persistence)

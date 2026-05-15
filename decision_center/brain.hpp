@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <random>
 
 // Activation layer equations
 double relu(double x);
 double tanh_func(double x);
 double sigmoid(double x);
 double dot_product(std::vector<double> v1, std::vector<double> v2);
+std::vector<double> soft_max(const std::vector<double>& V);
 
 // Layer functions
 class ActivationLayerReLU {
@@ -22,6 +24,7 @@ public:
     int get_biases_count() const { return biases.size(); }
     const std::vector<double>& get_weights() const;
     const std::vector<double>& get_biases() const;
+    void ActivationLayerReLUOffsping(const std::vector<double>& weights, const std::vector<double>& biases);
 };
 
 // Brain Class
@@ -30,9 +33,12 @@ public:
 class Brain {
 private:
     std::vector<ActivationLayerReLU> layers;
+    std::mt19937 gen;
 
 public:
-    Brain(std::vector<int> layer_sizes);
+    Brain(std::vector<int> layer_sizes, unsigned int seed = std::random_device{}());
     int decide(const std::vector<double>& input);
+    int softDecide(const std::vector<double> &input);
     int get_layer_count() const { return layers.size(); }
+    std::vector<ActivationLayerReLU>& get_layers();
 };

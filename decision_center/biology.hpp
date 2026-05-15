@@ -21,6 +21,7 @@ private:
     double _energy;
     double _health;
     double _water;
+    int _dehydration_ticks = 0; // consecutive ticks at 0 water; resets on any drink
     std::unordered_map<std::string, double> _genetic_values;
 
 public:
@@ -86,6 +87,7 @@ public:
      * @return A map containing the genetic values
      */
     std::unordered_map<std::string, double> get_genetic_vals() const;
+    void set_genetic_vals(const std::unordered_map<std::string, double>& vals);
 
     // ==================== Setters ====================
 
@@ -170,6 +172,12 @@ public:
      * @return The amount of energy drained this tick
      */
     double tick_energy_drain();
+
+    /**
+     * @brief Returns the per-tick energy drain rate without applying it
+     * @return The drain amount that would be applied this tick
+     */
+    double energy_drain_rate() const;
 
     /**
      * @brief Calculates health loss per tick based on energy deficiency

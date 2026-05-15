@@ -15,7 +15,8 @@ using namespace std;
 // Build the libpq keyword=value connection string
 string DBConnectionParams::toConnectionString() const {
     string s;
-    s += "host="   + host   + " ";
+    if (!host.empty())
+        s += "host=" + host + " ";
     s += "port="   + port   + " ";
     s += "dbname=" + dbname + " ";
     s += "user="   + user   + " ";
@@ -27,7 +28,7 @@ string DBConnectionParams::toConnectionString() const {
 
 static string envOr(const char* varName, const string& fallback) {
     const char* val = getenv(varName);
-    return (val && *val) ? string(val) : fallback;  // Use env var if set, else default
+    return val ? string(val) : fallback;  // Use env var if set (even empty), else default
 }
 
 DBConnectionParams DBConnectionParams::fromEnv() {
@@ -167,6 +168,14 @@ void DBConnector::rollbackTransaction() {
 
 void DBConnector::applySchema(const string& schemaSql) {
     PGResultGuard g(exec(schemaSql));
+}
+
+bool DBConnector::tableExists(const string& tableName) {
+    const string sql =
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = 'public' AND table_name = $1 LIMIT 1";
+    PGResultGuard g(execParams(sql, {tableName}));
+    return PQntuples(g.res) > 0;
 }
 
 void DBConnector::applySchemaFile(const string& filePath) {

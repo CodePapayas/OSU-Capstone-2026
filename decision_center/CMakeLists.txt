@@ -13,6 +13,7 @@ set(SOURCES
     brain.cpp
     entity.cpp
     biology.cpp
+    mutate.cpp
 )
 
 # ==================== Main Library ====================
@@ -42,3 +43,11 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/tests/test_maths.cpp")
     target_link_libraries(decision_center_tests PRIVATE decision_center)
     add_test(NAME MathTests COMMAND decision_center_tests)
 endif()
+
+# Softmax probabilistic + Brain stochastic tests
+add_executable(test_softmax
+    tests/test_softmax.cpp
+)
+target_link_libraries(test_softmax PRIVATE decision_center)
+target_include_directories(test_softmax PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/tests)
+add_test(NAME SoftmaxTests COMMAND test_softmax)

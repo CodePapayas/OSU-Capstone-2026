@@ -25,7 +25,8 @@ SaveManager::SaveManager(shared_ptr<DBConnector> db)
 }
 
 void SaveManager::initSchema(const string& schemaFilePath) {
-    m_db->applySchemaFile(schemaFilePath);
+    if (!m_db->tableExists("simulation_saves"))
+        m_db->applySchemaFile(schemaFilePath);
 }
 
 bool SaveManager::compressionEnabled() {

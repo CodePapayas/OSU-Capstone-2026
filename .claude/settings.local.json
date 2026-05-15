@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pg_isready -h localhost)",
+      "Bash(cmake --version)",
+      "Bash(dpkg -l libpq-dev)",
+      "Bash(awk '{print $2, $3}')",
+      "Bash(dpkg -l libpq-dev zlib1g-dev)",
+      "Bash(sudo apt-get install -y libpq-dev)",
+      "Bash(mkdir -p build_persistence)",
+      "Bash(cmake ../persistence)",
+      "Bash(./test_persistence *)",
+      "Read(//etc/postgresql/**)",
+      "Read(//var/lib/postgresql/**)",
+      "Bash(psql *)",
+      "Bash(cmake -B build -S .)",
+      "Bash(cmake *)",
+      "Bash(timeout 15 ./build/main_exe)"
+    ]
+  }
+}

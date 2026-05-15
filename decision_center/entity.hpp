@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <any>
 #include <iostream>
 #include <vector>
@@ -36,6 +37,14 @@ public:
 
     int x;
     int y;
+    uint64_t birth_tick     = 0;
+    uint64_t last_repro_tick = 0;
+    std::unordered_set<long long> parent_ids;  // IDs of both parents; empty for seed entities
+    std::unordered_set<long long> child_ids;   // IDs of all offspring produced
+    uint32_t inbreeding_gen = 0;               // 0 = clean; +1 per sibling-pairing generation
+    uint8_t  sleep_ticks_remaining = 0;
+    float    sleep_interrupt_chance = 0.0f;    // rolled once at sleep onset, static per session
+    float    sleep_regen_total = 0.0f;         // full-session regen, bad-sleep halving already applied
 
     /**
      * @brief Destructor for Entity
@@ -131,6 +140,8 @@ public:
      * @param amount The amount to be removed
      */
     void biology_rem_energy(double amount);
+
+    double biology_energy_drain_rate() const;
 
     /**
      * @brief Passes an amount of water to be consumed by the creature

@@ -1,92 +1,174 @@
-Kai Lindskog
+Kai Lindskog, Zach Wilkinson
 Oregon State University
-CS 462
+CS 461 / CS 462
 
-A-Life simulation project. Agents move around a grid, consume resources, reproduce, and evolve over time. Built in C++17.
+A-Life simulation. Agents navigate a procedurally generated environment, consume resources, reproduce sexually with genetic crossover and neural weight mutation, and evolve over generations. Built in C++17.
 
-## Build & Run
+---
 
-g++ -std=c++17 -I include test/test_main.cpp src/resource_node.cpp -o test_executable
-./test_executable
+## Build
 
-## Persistence (save/load system)
-
-Requires PostgreSQL. On macOS: `brew install postgresql@14`
-
-Set up the database once:
-```
-psql -U <your_user> -d postgres -c "CREATE DATABASE alife_sim;"
-psql -U <your_user> -d alife_sim -f db/schema.sql
+```bash
+mkdir -p build && cmake -B build -S . && cmake --build build -j4
 ```
 
-Set env vars (or add to ~/.zshrc):
-```
-export ALIFE_DB_HOST=localhost
-export ALIFE_DB_PORT=5432
-export ALIFE_DB_NAME=alife_sim
-export ALIFE_DB_USER=<your_user>
-```
+Requires PostgreSQL (`libpq-dev`) for the persistence layer.
 
-Build the persistence module:
-```
-mkdir -p build && cd build
-cmake ../persistence
-make -j4
-```
+---
 
-Run persistence tests:
-```
-./test_persistence
-./test_auto_save
-```
-
-## Running the simulation with live stats
+## Running the simulation
 
 Always run from the project root so `db/schema.sql` resolves correctly.
 
-**Terminal 1 — run the simulation:**
-```
-./build_main/main_exe
+```bash
+source env.sh && ./build/main_exe
 ```
 
-At startup you will be prompted to set the display interval:
-```
-Display frame every X ticks [default 1]:
-```
-Enter a number (e.g. `5`) to render the grid every 5 ticks, or press Enter to render every tick.
+At startup you will be prompted:
 
-**Runtime controls** (press without Enter while the simulation is running):
+| Prompt | Default | Description |
+|--------|---------|-------------|
+| Population size | 5 | Number of agents to spawn |
+| Display interval | 1 | Render the grid every N ticks |
+| Render delay (ms) | 150 | Pause between rendered frames for readability |
+| God mode | N | Scripted immortal agent — eats/reproduces on a fixed cycle, never dies. Useful for testing the visualizer |
+
+### Runtime controls
 
 | Key | Action |
 |-----|--------|
 | `P` | Pause / Resume |
-| `F` | Toggle fast forward — renders every 10 ticks regardless of the display interval |
-| `Q` | Quit and print the final tick count |
+| `F` | Toggle fast-forward (renders every 10 ticks) |
+| `Q` | Quit |
 
-**Terminal 2 — run the live visualizer** (polls the DB and redraws every 2 seconds by default):
+### Terminal display
+
+The grid renders in-place (no scroll). Each cell is 2 characters wide:
+
+| Symbol | Color | Meaning |
+|--------|-------|---------|
+| `██` | White → red (health) | Living agent |
+| `██` | Yellow (intensity = energy) | Food resource |
+| `██` | Blue (intensity = energy) | Water resource |
+| `░░` | Red-green gradient (Perlin) | Empty terrain |
+| `░░` | Dark red | Agent trail — tile occupied last frame |
+
+Stats bar below the grid shows tick, alive count, average energy, and resource count. God mode is flagged `[GOD]`.
+
+---
+
+## Live visualizer
+
+Polls the database every N seconds and prints a rolling stats view.
+
+```bash
+source env.sh && ./build/data_visualization/live_visualizer_tool
+# optional args: <poll_interval_seconds> <history_limit>
+# e.g. poll every 2s, show last 60 ticks:
+./build/data_visualization/live_visualizer_tool 2 60
 ```
-./build_main/data_visualization/live_visualizer_tool
+
+Run in a second terminal alongside the simulation.
+
+## Post-run visualizer (ImGui)
+
+Reads a CSV file for offline analysis.
+
+```bash
+./build/data_visualization/imgui_visualizer
+# or pass a path:
+./build/data_visualization/imgui_visualizer path/to/stats.csv
 ```
 
-Optional arguments (no brackets):
-```
-./build_main/data_visualization/live_visualizer_tool <poll_interval_seconds> <history_limit>
-# e.g. poll every 2 seconds, show last 60 ticks:
-./build_main/data_visualization/live_visualizer_tool 2 60
-```
+Defaults to `simulation_stats_out.csv` in the working directory.
 
-Both executables use the same database env vars (`ALIFE_DB_HOST`, `ALIFE_DB_PORT`, `ALIFE_DB_NAME`, `ALIFE_DB_USER`) — make sure they are set in both terminals.
+---
 
-## Project structure
+## Architecture
 
 ```
-include/        headers (circular buffer, fitness, resource node, save system)
-src/            implementations
-db/             PostgreSQL schema
-persistence/    CMakeLists.txt for the save/load module
-test/           integration tests
-decision_center/ brain / neural decision making
+main.cpp                        CLI entry point — prompts, controls, autosave wiring
+source/
+  Simulation.cpp / .hpp         Tick loop, multi-agent dispatch, display, god mode
+  Environment.cpp / .hpp        Perlin-noise grid, tile values
+decision_center/
+  brain.cpp / .hpp              Multi-layer ReLU neural network
+  biology.cpp / .hpp            Energy / water / health model, genetics
+  entity.cpp / .hpp             Agent — owns brain + biology
+  mutate.cpp / .hpp             Genetic crossover and weight mutation
+perception_movement/
+  perception.cpp / .hpp         Tile extraction within vision radius
+  movement.cpp / .hpp           Wraparound movement, terrain energy drain
+include/
+  circular_buffer.h             Rolling state history
+  simulation_state.h            Per-tick snapshot struct
+  db_connector.h                PostgreSQL connection wrapper
+  save_manager.h                Slot-based save/load
+  auto_save.h                   Tick-driven autosave scheduler
+src/
+  db_connector.cpp
+  save_manager.cpp
+  auto_save.cpp
+  resource_node.cpp
+persistence/                    Standalone CMakeLists for the DB module
+data_visualization/
+  LiveVisualizer                DB-polling terminal stats
+  ImGuiVisualizer               Offline ImGui/ImPlot dashboard (reads CSV)
+db/
+  schema.sql                    PostgreSQL schema
 ```
 
+---
 
+## Persistence (PostgreSQL)
 
+Set up once:
+
+```bash
+psql -U <user> -d postgres -c "CREATE DATABASE alife_sim;"
+psql -U <user> -d alife_sim -f db/schema.sql
+```
+
+Environment variables (put in `env.sh`):
+
+```bash
+export ALIFE_DB_HOST=localhost
+export ALIFE_DB_PORT=5432
+export ALIFE_DB_NAME=alife_sim
+export ALIFE_DB_USER=<user>
+export ALIFE_DB_PASSWORD=<password>
+```
+
+The simulation connects automatically at startup and autosaves every 3 ticks by default. Build and test the persistence module standalone:
+
+```bash
+cmake --build build --target test_persistence test_auto_save
+./build/persistence/test_persistence
+./build/persistence/test_auto_save
+```
+
+---
+
+## Biology & tuning
+
+**Death conditions:** health ≤ 0 OR 25 consecutive ticks at 0 water. Health also drains each tick energy falls below `1 - Mass` (quadratic on the deficit, compounding).
+
+**Key constants** (`decision_center/biology_constants.hpp`):
+
+| Constant | Value | Effect |
+|----------|-------|--------|
+| `ENERGY_DRAIN_COEFFICIENT` | 0.5 | Scales per-tick energy loss |
+| `TERRAIN_ENERGY_COEFFICIENT` | 0.5 | Energy cost of moving across terrain |
+| `TERRAIN_WATER_COEFFICIENT` | 0.08 | Water lost per move |
+| `WATER_DRINK_COEFFICIENT` | 2.0 | Water gained per drink action |
+| `HEALTH_COEFFICIENT` | 0.5 | Health drain scalar |
+| `MUTATION_CHANCE` | 0.02 | Per-weight/bias mutation probability |
+
+---
+
+## Tests
+
+```bash
+cmake --build build --target test_filter_perception test_softmax test_biology test_entity
+cd build && ctest --output-on-failure
+```
