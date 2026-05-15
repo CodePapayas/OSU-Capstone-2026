@@ -14,6 +14,8 @@ static std::uniform_real_distribution<> dis(0.0, 1.0);
 Biology::Biology(bool debug)
     : _energy(1.0), _health(1.0), _water(1.0)
 {
+    std::uniform_int_distribution<> birth_roll(1, 10);
+    _max_lifetime_births = birth_roll(gen);
     _genetic_values = GetDefaultGeneticValues();
     if (!debug)
     {
@@ -270,20 +272,34 @@ double Biology::tick_health_drain()
         add_health(drain * -1);
         return drain;
     }
+    if (_water < .2)
+        add_health(-0.001);
     return 0.0;
 }
 
 void Biology::update()
 {
-    /**
-     * Updates the organism for a single game tick.
-     * Clamps resources and applies per-tick drains.
-     */
     _energy = std::max(_energy, 0.0);
-    _water = std::max(_water, 0.0);
+    _water  = std::max(_water,  0.0);
+    tick_energy_drain();
+    tick_health_drain();
+    ++_age_ticks;
+    ++_ticks_since_last_reproduction;
+}
 
-    std::cout << "Tick energy loss: " << tick_energy_drain() << std::endl;
-    std::cout << "Tick Health loss: " << tick_health_drain() << std::endl;
+// ==================== Reproduction Gate ====================
+
+bool Biology::can_reproduce() const
+{
+    return _age_ticks >= 10
+        && _ticks_since_last_reproduction >= 25
+        && _lifetime_births < _max_lifetime_births;
+}
+
+void Biology::on_reproduced()
+{
+    ++_lifetime_births;
+    _ticks_since_last_reproduction = 0;
 }
 
 bool Biology::check_death() const

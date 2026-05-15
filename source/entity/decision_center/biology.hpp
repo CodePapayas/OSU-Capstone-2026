@@ -23,6 +23,11 @@ private:
     double _water;
     std::unordered_map<std::string, double> _genetic_values;
 
+    int _age_ticks = 0;
+    int _ticks_since_last_reproduction = 25;
+    int _lifetime_births = 0;
+    int _max_lifetime_births;
+
 public:
     /**
      * @brief Constructor for Biology
@@ -165,29 +170,15 @@ public:
 
     // ==================== Life Cycle ====================
 
-    /**
-     * @brief Calculates energy loss per tick based on creature complexity
-     * @return The amount of energy drained this tick
-     */
     double tick_energy_drain();
-
-    /**
-     * @brief Calculates health loss per tick based on energy deficiency
-     * @return The amount of health drained this tick
-     */
     double tick_health_drain();
-
-    /**
-     * @brief Updates the organism for a single game tick
-     * Recalculates resource drains and applies them
-     */
     void update();
-
-    /**
-     * @brief Checks if the organism should be considered dead
-     * @return True if health <= 0.0, false otherwise
-     */
     bool check_death() const;
+    bool can_reproduce() const;
+    void on_reproduced();
+
+    int sleep_ticks = 0;
+    double sleep_interrupt_chance = 0.0;
 
     // ==================== Display & Debugging ====================
 

@@ -25,6 +25,7 @@ private:
     std::unique_ptr<ResourceManager> _resource_manager;
     int _debug;
     int _current_entity_index = 0;
+    int _tick_count = 0;
 
 public:
     /**
@@ -40,11 +41,11 @@ public:
     /**
      * @brief Initializes the simulation with environment, entity, and brain. Currently all randos
      */
-    void initialize(int num_entities = 5);
+    void initialize(int num_entities);
 
     void seed_resources();
 
-    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6};
+    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6, SLEEP=7};
     /**
      * @brief Returns the value of the tile located at (x,y)
      * @return the float value.
@@ -77,6 +78,7 @@ public:
 
     void execute_movement(int direction);
     void consumption();
+    void sleep();
 
     int tick(int print =1);
 
