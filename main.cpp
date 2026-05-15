@@ -153,6 +153,10 @@ void alphaDemonstration(){
                 sim.seed_resources(); // OOPS I had forgotten to reseed resources, so entities were just starving to death every generation later on
                 int ticks = 0;
                 sim.set_primary_entity(*entities[j]);
+                // Reset health, energy and water to 1 for the primary entity to ensure fair fitness evaluation
+                sim.get_primary_entity()->get_biology()->add_energy(1.);
+                sim.get_primary_entity()->get_biology()->add_health(1.);
+                sim.get_primary_entity()->get_biology()->add_water(1.);
                 while(ticks < numTicksMax){
                    // cout << "Generation " << (i + 1) << ", Entity " << (j + 1) << ", Tick " << ticks << "\n";
                     stateHistory.push(capture_state(sim, static_cast<uint64_t>(i + 1)));
@@ -305,7 +309,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-    if (argc == 3 || (argc == 1 && std::string(argv[0]) == "--help")) {
+    if (argc == 1) {
         while (1)
         {
         std::cout << "No command-line arguments were detected. Displaying user interface" << std::endl;
