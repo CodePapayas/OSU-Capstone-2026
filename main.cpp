@@ -237,30 +237,22 @@ int runSimulation(int numTicks, int autosaveInterval, size_t bufferCapacity, con
     int autosaveCount = 0;
 
     for (int i = 0; i < numTicks; ++i) {
-        std::cout << "\n=== Tick " << (i + 1) << " ===" << std::endl;
-        int result = sim.tick();
+        int result = sim.tick(1);
 
         stateHistory.push(capture_state(sim, static_cast<uint64_t>(i + 1)));
 
-        // Autosave check
         if (autosaveInterval > 0 && (i + 1) % autosaveInterval == 0) {
             ++autosaveCount;
             std::string path = saveDir + "/autosave_tick_"
                              + std::to_string(i + 1) + ".txt";
             save_buffer_to_file(stateHistory, path);
-            std::cout << "[AUTOSAVE] tick " << (i + 1)
-                      << " -> " << path
-                      << "  (buffer: " << stateHistory.size()
-                      << "/" << stateHistory.capacity() << ")" << std::endl;
         }
 
         if (result == -1) {
-            std::cout << "Entity died at tick " << (i + 1) << "." << std::endl;
             if (autosaveInterval > 0) {
                 std::string path = saveDir + "/autosave_final_tick_"
                                  + std::to_string(i + 1) + ".txt";
                 save_buffer_to_file(stateHistory, path);
-                std::cout << "[AUTOSAVE] Final save -> " << path << std::endl;
             }
             break;
         }

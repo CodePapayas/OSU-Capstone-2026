@@ -11,6 +11,8 @@
 #include "../entity/decision_center/biology_constants.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <string>
 #include <vector>
 #include <iostream>
 #include <format>
@@ -247,6 +249,7 @@ int Simulation::pass_perception_to_brain()
         }
 
         // FILTERS OUT TOO MANY TILES, is causing a size mismatch in the dot product function in the brain module, causing vector subscript out-of-bounds issue
+        // Patched --zzwo
         std::vector<double> perception = get_perception_expanded(type_str);
         // Get the strength of the entities vision and determine how many tiles to ignore
         float vision_value = entity->biology_get_genetic_value("Vision");
@@ -299,11 +302,10 @@ void Simulation::interpret_decision(int decision_code)
             break;
         case DecisionCodes::REPRODUCE:
         {
-            // Have entity find partner in surroundings
             Entity* parent1 = get_primary_entity();
+            if (!parent1->get_biology()->can_reproduce()) break;
             int vision_radius = std::max(2, static_cast<int>(4 * parent1->biology_get_genetic_value("Vision")));
             Entity* parent2 = nullptr;
-            // Check all entities and see if tthey are within the vision range
             for (int j = 0; j < (int)_entities.size(); ++j) {
                 if (j == _current_entity_index || _entities[j]->biology_check_death()) continue;
                 int dx = std::abs(_entities[j]->get_coordinates().x - parent1->get_coordinates().x);
@@ -313,15 +315,15 @@ void Simulation::interpret_decision(int decision_code)
                     break;
                 }
             }
-            // If a partner is found, make em bang
-            // Presently, this means that a single entity could reproduce twice in a tick
-            // For example, if A decides to reproduce with B, and B decides the same on their turn
             if (parent2) {
                 reproduce(parent1, parent2);
-                std::cout << "Entity reproduced." << std::endl;
+                parent1->get_biology()->on_reproduced();
             }
             break;
         }
+        case DecisionCodes::SLEEP:
+            sleep();
+            break;
         default:
             std::cerr << "Unknown decision code: " << decision_code << std::endl;
     }
@@ -368,10 +370,11 @@ void Simulation::consumption(){
     Entity* entity = get_primary_entity();
     ResourceNode* resource = _resource_manager->getResourceAtPosition(Position(entity->x, entity->y));
     if (resource) {
-        double energyGained = resource->consume(entity->biology_get_genetic_value("Mass")); // Consume energy based on Mass ?
+        double energyGained = resource->consume(entity->biology_get_genetic_value("Mass"));
         if (resource->getType() == ResourceType::FOOD) {
             std::cout << "Entity consumed FOOD resource for" << energyGained << " raw energy." << std::endl;
-            entity->biology_eat(energyGained); // Add the consumed energy to the entity's biology
+            entity->biology_eat(energyGained);
+            entity->get_biology()->add_energy(-(1.0 - entity->biology_get_genetic_value("Energy Efficiency")) * 0.05);
         } else if (resource->getType() == ResourceType::WATER) {
             std::cout << "Entity consumed WATER resource for " << energyGained << " raw water." << std::endl;
             entity->biology_drink(energyGained); // Add the consumed energy to the entity's biology
@@ -398,6 +401,19 @@ void Simulation::consumption(){
     }
 }
 
+void Simulation::sleep() {
+    auto bio = get_primary_entity()->get_biology();
+    if (bio->sleep_ticks == 0) {
+        bio->sleep_ticks = 4;
+        bio->sleep_interrupt_chance = 0.01 + (static_cast<double>(rand()) / RAND_MAX) * 0.02;
+    }
+    bio->add_energy(0.02 * 1.5);
+    if ((static_cast<double>(rand()) / RAND_MAX) < bio->sleep_interrupt_chance)
+        bio->sleep_ticks = 0;
+    else
+        --bio->sleep_ticks;
+}
+
 int Simulation::tick(int print){
     _debug = print;
     if (!print){
@@ -411,8 +427,12 @@ int Simulation::tick(int print){
         _current_entity_index = i;
         if (_entities[i]->biology_check_death()) continue;
 
-        int decision = pass_perception_to_brain();
-        interpret_decision(decision);
+        if (_entities[i]->get_biology()->sleep_ticks > 0) {
+            sleep();
+        } else {
+            int decision = pass_perception_to_brain();
+            interpret_decision(decision);
+        }
         _entities[i]->update_biology();
         _entities[i]->biology_get_metrics(true);
     }
@@ -578,7 +598,22 @@ void Simulation::display_environment() const
     constexpr const char* kSolidBlock = u8"\u2588\u2588";
     constexpr const char* kLightShade = u8"\u2591\u2591";
 
-    std::cout << "\n=== Environment Display ===\n" << std::endl;
+    // Buffer entire frame and flush once \u2014 prevents flicker/scroll
+    std::string out;
+    out.reserve(8192);
+
+    // Cursor home, hide cursor during render
+    out += "\033[H\033[?25l";
+
+    int alive = 0;
+    for (const auto& e : _entities)
+        if (!e->biology_check_death()) ++alive;
+
+    char header[64];
+    std::snprintf(header, sizeof(header), "Entities: %d alive / %d total\n",
+                  alive, static_cast<int>(_entities.size()));
+    out += header;
+
     for (int y = 0; y < _environment->getTileAmountY(); ++y)
     {
         for (int x = 0; x < _environment->getTileAmountX(); ++x)
@@ -594,73 +629,41 @@ void Simulation::display_environment() const
                 }
             }
 
+            char cell[64];
             if (entity_here)
             {
                 double curr_health = entity_here->biology_get_metrics()["Health"];
-                int r, g, b;
-                r = 255;
-                g = (int)(curr_health * 255);
-                b = (int)(curr_health * 255);
-                std::cout << "\033[38;2;" << r << ";" << g << ";" << b << "m"
-                          << kSolidBlock
-                          << "\033[0m";
+                int g = (int)(curr_health * 255);
+                std::snprintf(cell, sizeof(cell), "\033[38;2;255;%d;%dm%s\033[0m", g, g, kSolidBlock);
             }
-            else if(!_resource_manager->findResourcesInRange(Position(x, y), 0).empty()) // Check if there's a resource at this location
+            else if (!_resource_manager->findResourcesInRange(Position(x, y), 0).empty())
             {
-                // Display resource as Blue blocks if water, yellow for energy, purple for chems, with intensity based on the energy value of the resource
                 double energy_value = _resource_manager->getResourceAtPosition(Position(x, y))->getEnergyValue();
                 int intensity = static_cast<int>(energy_value * 255);
-                if (_resource_manager->getResourceAtPosition(Position(x, y))->getType() == ResourceType::FOOD) {
-                    // Yellow color for food
-                    std::cout << "\033[38;2;" << intensity << ";" << intensity << ";0m"  // Yellow color with intensity
-                              << kSolidBlock
-                              << "\033[0m"; // Reset color
-                }
-                else if (_resource_manager->getResourceAtPosition(Position(x, y))->getType() == ResourceType::WATER) {
-                    // Blue color for water 
-                    std::cout << "\033[38;2;0;0;" << intensity << "m"  // Blue color with intensity
-                          << kSolidBlock
-                          << "\033[0m"; // Reset color
-                }
-                else {
-                    // Purple color for chemicals
-                    std::cout << "\033[38;2;" << intensity << ";0;" << intensity << "m"  // Purple color with intensity
-                          << kSolidBlock
-                          << "\033[0m"; // Reset color
-                }
+                ResourceType rtype = _resource_manager->getResourceAtPosition(Position(x, y))->getType();
+                if (rtype == ResourceType::FOOD)
+                    std::snprintf(cell, sizeof(cell), "\033[38;2;%d;%d;0m%s\033[0m", intensity, intensity, kSolidBlock);
+                else if (rtype == ResourceType::WATER)
+                    std::snprintf(cell, sizeof(cell), "\033[38;2;0;0;%dm%s\033[0m", intensity, kSolidBlock);
+                else
+                    std::snprintf(cell, sizeof(cell), "\033[38;2;%d;0;%dm%s\033[0m", intensity, intensity, kSolidBlock);
             }
             else
             {
-                // Some hacky color coding adopted from another project.
-                int r, g, b;
-
-                double normalized = (tile_value + 2.0) / 4.0; // 0.0 to 1.0
-                r = (int)(normalized * 255);
-                g = (int)((1 - normalized) * 255);
-                b = (int)((1 - normalized) * 255);
-
-                //normalized = tile_value;
-
-                bool aesthetic = true;
-                if(aesthetic){
-                    std::cout << "\033[38;2;" << r << ";" << g << ";" << b << "m"
-                            << kLightShade
-                            << "\033[0m";
-                } else {
-                    // Alternative print method, prints the value instead of 0
-                    char buffer[20];
-                    std::sprintf(buffer,"%.1f", tile_value); 
-                    std::cout << "\033[38;2;" << r << ";" << g << ";" << b << "m"
-                            << buffer
-                            << " "
-                            << "\033[0m"; 
-                    
-               }
+                double normalized = (tile_value + 2.0) / 4.0;
+                int r = (int)(normalized * 255);
+                int g = (int)((1 - normalized) * 255);
+                std::snprintf(cell, sizeof(cell), "\033[38;2;%d;%d;%dm%s\033[0m", r, g, g, kLightShade);
             }
+            out += cell;
         }
-        std::cout << std::endl;
+        out += '\n';
     }
-    std::cout << "\n=== End Environment Display ===\n" << std::endl;
+
+    // Restore cursor
+    out += "\033[?25h";
+
+    std::cout << out << std::flush;
 }
 
 float Simulation::get_vision_value() const
