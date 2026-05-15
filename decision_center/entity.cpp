@@ -132,6 +132,12 @@ void Entity::biology_rem_energy(double amount)
     _biology->add_energy(amount * -1);
 }
 
+double Entity::biology_energy_drain_rate() const
+{
+    if (_biology == nullptr) return 0.001;
+    return _biology->energy_drain_rate();
+}
+
 void Entity::biology_drink(double amount)
 {
     if (_biology == nullptr)

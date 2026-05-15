@@ -16,6 +16,7 @@
 #include "../include/simulation_state.h"
 
 #include <algorithm>
+#include <random>
 #include <chrono>
 #include <cmath>
 #include <ctime>
@@ -39,12 +40,12 @@ Simulation::~Simulation() = default;
 
 void Simulation::initialize(int num_entities)
 {
-    num_entities = std::max(1, std::min(num_entities, 50));
+    num_entities = std::max(1, num_entities);
 
     _environment = std::make_unique<Environment>();
     std::cout << "Environment created successfully!" << std::endl;
 
-    std::vector<int> layer_sizes = {128, 200, 200, 7};
+    std::vector<int> layer_sizes = {128, 200, 200, 8};
     for (int i = 0; i < num_entities; ++i) {
         auto entity = std::make_unique<Entity>();
         entity->set_coordinates(Vector2d(rand() % GRID_SIZE, rand() % GRID_SIZE));
@@ -83,10 +84,28 @@ float Simulation::environGetTileValue(int x, int y) const
     return _environment->getTileValue(Vector2d(x, y));
 }
 
+static constexpr uint64_t REPRO_COOLDOWN = 25;
+static constexpr uint64_t MIN_REPRO_AGE  = REPRO_COOLDOWN;
+
 Entity* Simulation::reproduce(Entity* p1, Entity* p2)
 {
-    if (_entities.size() >= _pop_cap) return nullptr;
     if (p1 == nullptr || p2 == nullptr) return nullptr;
+    if ((m_tick - p1->birth_tick) < MIN_REPRO_AGE)  return nullptr;
+    if ((m_tick - p2->birth_tick) < MIN_REPRO_AGE)  return nullptr;
+    if ((m_tick - p1->last_repro_tick) < REPRO_COOLDOWN) return nullptr;
+    if ((m_tick - p2->last_repro_tick) < REPRO_COOLDOWN) return nullptr;
+
+    // Hard block: parent-child pairings
+    if (p1->child_ids.count(p2->get_id()) || p2->child_ids.count(p1->get_id())) return nullptr;
+
+    // Sibling check: shared parent → inbreeding path
+    bool is_inbred = false;
+    for (long long pid : p1->parent_ids) {
+        if (p2->parent_ids.count(pid)) { is_inbred = true; break; }
+    }
+    uint32_t child_inbreeding_gen = is_inbred
+        ? std::max(p1->inbreeding_gen, p2->inbreeding_gen) + 1
+        : 0;
 
     std::streambuf* originalCoutBuffer = std::cout.rdbuf();
     std::cout.rdbuf(nullptr);
@@ -99,7 +118,9 @@ Entity* Simulation::reproduce(Entity* p1, Entity* p2)
         double chosen_val = (rand() % 2 == 0) ? pair.second : p2_genetics[pair.first];
         child_genetics[pair.first] = chosen_val;
     }
-    child_genetics = mutate_genetics(child_genetics);
+    child_genetics = is_inbred
+        ? mutate_genetics_inbred(child_genetics, child_inbreeding_gen)
+        : mutate_genetics(child_genetics);
 
     Entity* child = new Entity();
     child->set_biology(std::make_shared<Biology>(false));
@@ -108,12 +129,29 @@ Entity* Simulation::reproduce(Entity* p1, Entity* p2)
     std::vector<ActivationLayerReLU>& parent_layers = brainParent->get_brain()->get_layers();
     int layer_index = 0;
     for (auto& layer : parent_layers) {
-        std::vector<double> mutated_weights = mutate_vector(layer.get_weights());
-        std::vector<double> mutated_biases = mutate_vector(layer.get_biases());
+        std::vector<double> mutated_weights = is_inbred
+            ? mutate_vector_inbred(layer.get_weights(), child_inbreeding_gen)
+            : mutate_vector(layer.get_weights());
+        std::vector<double> mutated_biases = is_inbred
+            ? mutate_vector_inbred(layer.get_biases(), child_inbreeding_gen)
+            : mutate_vector(layer.get_biases());
         child->get_brain()->get_layers()[layer_index].ActivationLayerReLUOffsping(mutated_weights, mutated_biases);
         ++layer_index;
     }
     child->set_coordinates(Vector2d(rand() % GRID_SIZE, rand() % GRID_SIZE));
+
+    child->birth_tick      = m_tick;
+    child->inbreeding_gen  = child_inbreeding_gen;
+    child->parent_ids      = {p1->get_id(), p2->get_id()};
+
+    p1->last_repro_tick = m_tick;
+    p2->last_repro_tick = m_tick;
+    p1->child_ids.insert(child->get_id());
+    p2->child_ids.insert(child->get_id());
+
+    p1->biology_rem_energy(5.0 * p1->biology_energy_drain_rate());
+    p2->biology_rem_energy(5.0 * p2->biology_energy_drain_rate());
+
     _entities.push_back(std::unique_ptr<Entity>(child));
 
     std::cout.rdbuf(originalCoutBuffer);
@@ -138,7 +176,7 @@ void Simulation::set_primary_entity_random()
     _entities.clear();
     auto entity = std::make_unique<Entity>();
     entity->set_coordinates(Vector2d(rand() % GRID_SIZE, rand() % GRID_SIZE));
-    std::vector<int> layer_sizes = {128, 200, 200, 7};
+    std::vector<int> layer_sizes = {128, 200, 200, 8};
     entity->set_brain(std::make_shared<Brain>(layer_sizes));
     entity->set_biology(std::make_shared<Biology>(false));
     _entities.push_back(std::move(entity));
@@ -226,6 +264,18 @@ void Simulation::interpret_decision(int decision_code)
             if (parent2 != nullptr) reproduce(parent1, parent2);
             break;
         }
+        case DecisionCodes::SLEEP: {
+            Entity* entity = get_primary_entity();
+            if (entity->sleep_ticks_remaining == 0) {
+                static std::mt19937 sleep_rng(std::random_device{}());
+                std::uniform_real_distribution<float> interrupt_dist(0.02f, 0.05f);
+                std::uniform_real_distribution<float> bad_sleep_dist(0.0f, 1.0f);
+                entity->sleep_ticks_remaining  = 4;
+                entity->sleep_interrupt_chance = interrupt_dist(sleep_rng);
+                entity->sleep_regen_total      = (bad_sleep_dist(sleep_rng) < 0.20f) ? 0.16f : 0.32f;
+            }
+            break;
+        }
         default: break;
     }
 }
@@ -277,6 +327,27 @@ int Simulation::tick()
     for (int i = 0; i < (int)_entities.size(); ++i) {
         _current_entity_index = i;
         if (_entities[i]->biology_check_death()) continue;
+
+        Entity* ent = _entities[i].get();
+
+        // Process in-progress sleep before brain gets control
+        if (ent->sleep_ticks_remaining > 0) {
+            static std::mt19937 sleep_tick_rng(std::random_device{}());
+            std::uniform_real_distribution<float> roll(0.0f, 1.0f);
+            bool interrupted = roll(sleep_tick_rng) < ent->sleep_interrupt_chance;
+            uint8_t ticks_completed = 4 - ent->sleep_ticks_remaining + 1;
+            if (interrupted || ent->sleep_ticks_remaining == 1) {
+                float regen = (static_cast<float>(ticks_completed) / 4.0f) * ent->sleep_regen_total;
+                ent->get_biology()->add_energy(static_cast<double>(regen));
+                ent->sleep_ticks_remaining  = 0;
+                ent->sleep_interrupt_chance = 0.0f;
+                ent->sleep_regen_total      = 0.0f;
+            } else {
+                --ent->sleep_ticks_remaining;
+            }
+            ent->update_biology();
+            continue;
+        }
 
         int decision;
         if (m_godMode) {

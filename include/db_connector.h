@@ -116,6 +116,7 @@ public:
 
     void applySchema(const string& schemaSql);          // Run a raw SQL schema string
     void applySchemaFile(const string& filePath);       // Read a .sql file and run it
+    bool tableExists(const string& tableName);          // Check if table exists in public schema
 
     PGconn* raw() const { return m_conn; }              // Direct handle, use sparingly
 

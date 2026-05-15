@@ -149,6 +149,23 @@ cmake --build build --target test_persistence test_auto_save
 
 ---
 
+## Biology & tuning
+
+**Death conditions:** health ≤ 0 OR 25 consecutive ticks at 0 water. Health also drains each tick energy falls below `1 - Mass` (quadratic on the deficit, compounding).
+
+**Key constants** (`decision_center/biology_constants.hpp`):
+
+| Constant | Value | Effect |
+|----------|-------|--------|
+| `ENERGY_DRAIN_COEFFICIENT` | 0.5 | Scales per-tick energy loss |
+| `TERRAIN_ENERGY_COEFFICIENT` | 0.5 | Energy cost of moving across terrain |
+| `TERRAIN_WATER_COEFFICIENT` | 0.08 | Water lost per move |
+| `WATER_DRINK_COEFFICIENT` | 2.0 | Water gained per drink action |
+| `HEALTH_COEFFICIENT` | 0.5 | Health drain scalar |
+| `MUTATION_CHANCE` | 0.02 | Per-weight/bias mutation probability |
+
+---
+
 ## Tests
 
 ```bash

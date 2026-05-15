@@ -58,6 +58,9 @@ target_include_directories(test_filter_perception PRIVATE
     ${PROJECT_SOURCE_DIR}/perception_movement
     ${PROJECT_SOURCE_DIR}/decision_center/tests
 )
+if(TARGET decision_center)
+    target_link_libraries(test_filter_perception PRIVATE decision_center)
+endif()
 add_test(NAME FilterPerceptionTests COMMAND test_filter_perception)
 
 if(TARGET alife_persistence)

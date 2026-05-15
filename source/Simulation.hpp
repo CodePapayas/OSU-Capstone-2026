@@ -36,8 +36,6 @@ private:
     std::vector<std::unique_ptr<Entity>> _entities;
     std::unique_ptr<Perception> _perception;
     std::unique_ptr<ResourceManager> _resource_manager;
-    size_t _pop_cap = 50;
-
     int  _current_entity_index = 0;
     bool _debug = false;
     std::unordered_map<int, Entity*> _entity_pos_map;
@@ -73,14 +71,13 @@ public:
      * @brief Initializes the simulation with environment, entity, and brain. Currently all randos
      */
     void initialize(int num_entities = 5);
-    void set_pop_cap(size_t cap) { _pop_cap = cap; }
 
     void seed_resources();
 
     // WARNING: MOVE_UP/DOWN/LEFT/RIGHT must stay at 0-3 in this exact order.
     // execute_movement() casts these codes directly to Movement::Direction (NORTH=0,SOUTH=1,WEST=2,EAST=3).
     // Any new decision inserted before index 4 silently maps to a diagonal move instead.
-    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6};
+    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6, SLEEP=7};
     /**
      * @brief Returns the value of the tile located at (x,y)
      * @return the float value.

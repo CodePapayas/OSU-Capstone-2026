@@ -14,7 +14,8 @@
       "Read(//var/lib/postgresql/**)",
       "Bash(psql *)",
       "Bash(cmake -B build -S .)",
-      "Bash(cmake *)"
+      "Bash(cmake *)",
+      "Bash(timeout 15 ./build/main_exe)"
     ]
   }
 }

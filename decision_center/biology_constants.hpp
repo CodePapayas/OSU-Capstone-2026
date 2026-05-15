@@ -7,7 +7,8 @@
 // Energy and resource coefficients
 constexpr double ENERGY_DRAIN_COEFFICIENT = .5;
 constexpr double TERRAIN_ENERGY_COEFFICIENT = .5;
-constexpr double TERRAIN_WATER_COEFFICIENT = .2;
+constexpr double TERRAIN_WATER_COEFFICIENT = .08;
+constexpr double WATER_DRINK_COEFFICIENT = 2.0;
 constexpr double HEALTH_COEFFICIENT = .5;
 
 // Terrain type identifiers

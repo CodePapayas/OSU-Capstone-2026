@@ -170,6 +170,14 @@ void DBConnector::applySchema(const string& schemaSql) {
     PGResultGuard g(exec(schemaSql));
 }
 
+bool DBConnector::tableExists(const string& tableName) {
+    const string sql =
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = 'public' AND table_name = $1 LIMIT 1";
+    PGResultGuard g(execParams(sql, {tableName}));
+    return PQntuples(g.res) > 0;
+}
+
 void DBConnector::applySchemaFile(const string& filePath) {
     ifstream file(filePath);
     if (!file.is_open())

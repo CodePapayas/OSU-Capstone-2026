@@ -103,7 +103,7 @@ int main() {
 
     auto db = std::make_shared<DBConnector>(DBConnectionParams::fromEnv());
     auto sm = std::make_shared<SaveManager>(db);
-    sm->initSchema("db/schema.sql");
+    sm->initSchema("../db/schema.sql");
 
     AutoSaveConfig cfg;
     cfg.intervalTicks = 3;

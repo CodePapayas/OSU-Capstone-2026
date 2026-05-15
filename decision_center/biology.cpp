@@ -32,7 +32,7 @@ void Biology::set_random_attributes()
     for (auto& pair : _genetic_values)
     {
         double random_val = dis(gen);
-        pair.second = random_val * random_val; 
+        pair.second = random_val;
     }
 }
 
@@ -145,7 +145,7 @@ double Biology::drink_water(double quantity)
      * Adjusts the water reserves a creature obtains from drinking based on
      * efficiency.
      */
-    double amount = quantity * _genetic_values["Water Efficiency"];
+    double amount = quantity * _genetic_values["Water Efficiency"] * WATER_DRINK_COEFFICIENT;
     add_water(amount);
     return amount;
 }
@@ -216,10 +216,7 @@ double Biology::movement_water_drain(const std::string& terrain_type)
     }
 
     double water_efficiency = 1.0 - _genetic_values["Water Efficiency"];
-    double amount = std::max(
-        water_efficiency * efficiency * TERRAIN_WATER_COEFFICIENT,
-        0.01
-    );
+    double amount = water_efficiency * efficiency * TERRAIN_WATER_COEFFICIENT;
 
     add_water(amount * -1);
     return amount;
@@ -227,28 +224,25 @@ double Biology::movement_water_drain(const std::string& terrain_type)
 
 // ==================== Life Cycle ====================
 
+double Biology::energy_drain_rate() const
+{
+    double total = 0.0;
+    for (const auto& pair : _genetic_values)
+        if (pair.first != "Mass") total += pair.second;
+    total = std::pow(total, 0.5) / static_cast<double>(_genetic_values.size());
+    total = total * (1.0 - std::pow(_genetic_values.at("Mass"), 2.0));
+    return std::max(total * ENERGY_DRAIN_COEFFICIENT, .001);
+}
+
 double Biology::tick_energy_drain()
 {
     /**
      * Determines how much energy the creature loses every tick.
      * Based on the sum of genetic traits (excluding Mass).
      */
-    double total = 0.0;
-
-    for (const auto& pair : _genetic_values)
-    {
-        if (pair.first != "Mass")
-        {
-            total += pair.second;
-        }
-    }
-
-    // Calculate the drain: sqrt of sum, divided by number of traits, adjusted for mass
-    total = std::pow(total, 0.5) / static_cast<double>(_genetic_values.size());
-    total = total * (1.0 - std::pow(_genetic_values["Mass"], 2.0));
-    double drain = std::max(total * ENERGY_DRAIN_COEFFICIENT,.001);
+    double drain = energy_drain_rate();
     add_energy(drain * -1);
-    return total;
+    return drain;
 }
 
 double Biology::tick_health_drain()
@@ -259,7 +253,7 @@ double Biology::tick_health_drain()
      */
     if (_energy < 1.0 - _genetic_values["Mass"])
     {
-        double difference = _genetic_values["Mass"] - _energy;
+        double difference = (1.0 - _genetic_values["Mass"]) - _energy;
         double drain = std::pow(difference, 2.0);
         add_health(drain * -1);
         return drain;
@@ -287,7 +281,7 @@ bool Biology::check_death() const
     /**
      * Checks if the organism should be considered dead.
      */
-    return _health <= 0.0 || _dehydration_ticks >= 3;
+    return _health <= 0.0 || _dehydration_ticks >= 25;
 }
 
 // ==================== Display & Debugging ====================

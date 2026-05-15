@@ -174,6 +174,12 @@ public:
     double tick_energy_drain();
 
     /**
+     * @brief Returns the per-tick energy drain rate without applying it
+     * @return The drain amount that would be applied this tick
+     */
+    double energy_drain_rate() const;
+
+    /**
      * @brief Calculates health loss per tick based on energy deficiency
      * @return The amount of health drained this tick
      */
