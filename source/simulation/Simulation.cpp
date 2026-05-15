@@ -30,7 +30,7 @@ void Simulation::initialize(int num_entities)
     _environment = std::make_unique<Environment>(size, size);
     std::cout << "Environment created successfully!" << std::endl;
 
-    std::vector<int> layer_sizes = {128, 200, 200, 7};
+    std::vector<int> layer_sizes = {228, 300, 300, 7};
     for (int i = 0; i < num_entities; ++i) {
         auto entity = std::make_unique<Entity>();
         entity->set_coordinates(Vector2d(rand() % _environment->getTileAmountX(),
@@ -56,8 +56,17 @@ void Simulation::seed_resources()
     for (int x =0; x < _environment->getTileAmountX(); x += 1) {
         for (int y = 0; y < _environment->getTileAmountY(); y += 1) {
             float randomValue = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-            if (randomValue > 0.9){ // 10% chance to create a resource
-                ResourceType type = static_cast<ResourceType>(rand() % 2); // Randomly choose a resource type
+            if (randomValue > 0.75){ // 25% chance to create a resource
+                // 20% chance to create 1 of 4 chemical nodes
+                int rType = rand()%5;
+                if (rType ==4) {
+                    rType= rand()%4+2;
+                }
+                // Otherwise a coinflip between water and energy
+                else{
+                    rType = rand() % 2;
+                }
+                ResourceType type = static_cast<ResourceType>(rType); // Randomly choose a resource type
                 double energyValue = static_cast<double>(rand()) / static_cast<double>(RAND_MAX); // Random energy value between 0 and 1
                 bool renewable = (rand() % 2) == 0; // Randomly decide if it's renewable
                 _resource_manager->createResource(Position(x, y), type, energyValue, renewable);
@@ -280,9 +289,11 @@ void Simulation::interpret_decision(int decision_code)
             break;
         case DecisionCodes::REPRODUCE:
         {
+            // Have entity find partner in surroundings
             Entity* parent1 = get_primary_entity();
             int vision_radius = std::max(2, static_cast<int>(4 * parent1->biology_get_genetic_value("Vision")));
             Entity* parent2 = nullptr;
+            // Check all entities and see if tthey are within the vision range
             for (int j = 0; j < (int)_entities.size(); ++j) {
                 if (j == _current_entity_index || _entities[j]->biology_check_death()) continue;
                 int dx = std::abs(_entities[j]->get_coordinates().x - parent1->get_coordinates().x);
@@ -292,6 +303,9 @@ void Simulation::interpret_decision(int decision_code)
                     break;
                 }
             }
+            // If a partner is found, make em bang
+            // Presently, this means that a single entity could reproduce twice in a tick
+            // For example, if A decides to reproduce with B, and B decides the same on their turn
             if (parent2) {
                 reproduce(parent1, parent2);
                 std::cout << "Entity reproduced." << std::endl;
@@ -351,6 +365,22 @@ void Simulation::consumption(){
         } else if (resource->getType() == ResourceType::WATER) {
             std::cout << "Entity consumed WATER resource for " << energyGained << " raw water." << std::endl;
             entity->biology_drink(energyGained); // Add the consumed energy to the entity's biology
+        } 
+        else if (resource->getType() == ResourceType::CHEMICAL_1) {
+            std::cout << "Entity consumed CHEMICAL 1 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_1", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_2) {
+            std::cout << "Entity consumed CHEMICAL 2 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_2", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_3) {
+            std::cout << "Entity consumed CHEMICAL 3 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_3", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
+        }
+        else if (resource->getType() == ResourceType::CHEMICAL_4) {
+            std::cout << "Entity consumed CHEMICAL 4 resource for " << energyGained << " raw chemical energy." << std::endl;
+            entity->biology_consume_chemical("CHEMICAL_4", energyGained); // Add the consumed chemical to the entity's biology, using the tile type as a proxy for chemical type for now
         }
     }
     else{
@@ -396,7 +426,9 @@ int Simulation::tick(int print){
         std::cout << "All entities have died. Ending simulation." << std::endl;
         return -1;
     }
+    if (_entities.size()!=1){
     std::cout << alive << "/" << _entities.size() << " entities alive." << std::endl;
+    }
     return 0;
 }
 
@@ -569,7 +601,7 @@ void Simulation::display_environment() const
             }
             else if(!_resource_manager->findResourcesInRange(Position(x, y), 0).empty()) // Check if there's a resource at this location
             {
-                // Display resource as Blue blocks if water, yellow for energy, with intensity based on the energy value of the resource
+                // Display resource as Blue blocks if water, yellow for energy, purple for chems, with intensity based on the energy value of the resource
                 double energy_value = _resource_manager->getResourceAtPosition(Position(x, y))->getEnergyValue();
                 int intensity = static_cast<int>(energy_value * 255);
                 if (_resource_manager->getResourceAtPosition(Position(x, y))->getType() == ResourceType::FOOD) {
@@ -578,12 +610,17 @@ void Simulation::display_environment() const
                               << kSolidBlock
                               << "\033[0m"; // Reset color
                 }
-                else {
+                else if (_resource_manager->getResourceAtPosition(Position(x, y))->getType() == ResourceType::WATER) {
                     // Blue color for water 
                     std::cout << "\033[38;2;0;0;" << intensity << "m"  // Blue color with intensity
                           << kSolidBlock
                           << "\033[0m"; // Reset color
-
+                }
+                else {
+                    // Purple color for chemicals
+                    std::cout << "\033[38;2;" << intensity << ";0;" << intensity << "m"  // Purple color with intensity
+                          << kSolidBlock
+                          << "\033[0m"; // Reset color
                 }
             }
             else

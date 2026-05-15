@@ -169,6 +169,8 @@ public:
      */
     void biology_rem_health(double amount);
 
+    void biology_consume_chemical(const std::string& chem, double quantity);
+
     /**
      * @brief Checks if the individual should have died
      * @return True if the organism should die, false otherwise
