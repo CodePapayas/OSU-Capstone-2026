@@ -39,36 +39,6 @@ double dot_product(std::vector<double> v1, std::vector<double> v2) {
     return result;
 }
 
-//Softmax() function
-// Source: https://github.com/ZigaSajovic/dCpp/blob/master/examples/softmax.cpp
-std::vector<double> soft_max(const std::vector<double>& V) {
-    if (V.empty()) return {};
-
-    double max_val = *std::max_element(V.begin(), V.end());
-
-    std::vector<double> output;
-    output.reserve(V.size());
-
-    std::vector<double> exp_vals;
-    exp_vals.reserve(V.size());
-
-    double sum = 0.0;
-
-    // Shift by max_val, exponentiate, sum
-    for (double v : V) {
-        double e = std::exp(v - max_val);
-        exp_vals.push_back(e);
-        sum += e;
-    }
-
-    // Normalize
-    for (double e : exp_vals) {
-        output.push_back(e / sum);
-    }
-
-    return output;
-}
-
 /**
 // ReLU Activation Layer Class
 // fully connected layer with ReLU activation applied to outputs.
@@ -86,7 +56,7 @@ ActivationLayerReLU::ActivationLayerReLU(int input_size, int output_size) {
 
 
     for (double& b : biases) {
-        b = 0.01;
+        b = dist(gen);
     }
 
     for (double& w : weights) {
@@ -125,11 +95,6 @@ const std::vector<double>& ActivationLayerReLU::get_biases() const{
     return biases;
 }
 
-void ActivationLayerReLU::ActivationLayerReLUOffsping(const std::vector<double>& w, const std::vector<double>& b) {
-    weights = w;
-    biases  = b;
-}
-
 // returns the flattened weight matrix (stored row-major)
 const std::vector<double>& ActivationLayerReLU::get_weights() const{
     return weights;
@@ -142,7 +107,7 @@ const std::vector<double>& ActivationLayerReLU::get_weights() const{
 */
 
 // Constructor for the brain
-Brain::Brain(std::vector<int> layer_sizes, unsigned int seed) : gen(seed) {
+Brain::Brain(std::vector<int> layer_sizes) {
     
     for (int i = 0; i < layer_sizes.size() - 1; ++i) {
         int n_in = layer_sizes[i];
@@ -161,24 +126,4 @@ int Brain::decide(const std::vector<double>& input) {
 
     int max_index = std::max_element(current_output.begin(), current_output.end()) - current_output.begin();
     return max_index;
-}
-
-std::vector<ActivationLayerReLU>& Brain::get_layers() {
-    return layers;
-}
-
-//Softmax decision center
-int Brain::softDecide(const std::vector<double>& input) {
-    std::vector<double> current_output = input;
-
-    for (int i = 0; i < layers.size(); ++i) {
-        current_output = layers[i].forward(current_output);
-    }
-
-    std::vector<double> probabilities = soft_max(current_output);
-
-    std::discrete_distribution<int> dist(probabilities.begin(), probabilities.end());
-
-    return dist(this->gen);
-
 }

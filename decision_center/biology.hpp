@@ -21,7 +21,6 @@ private:
     double _energy;
     double _health;
     double _water;
-    int _dehydration_ticks = 0; // consecutive ticks at 0 water; resets on any drink
     std::unordered_map<std::string, double> _genetic_values;
 
 public:
@@ -30,6 +29,12 @@ public:
      * @param debug If true, uses default genetic values; if false, randomizes them
      */
     explicit Biology(bool debug = false);
+
+    /**
+     * @brief Set the global seed used by Biology's internal RNG for reproducibility
+     * @param seed
+     */
+    static void set_global_seed(unsigned int seed);
 
     int x;
     int y;
@@ -87,7 +92,6 @@ public:
      * @return A map containing the genetic values
      */
     std::unordered_map<std::string, double> get_genetic_vals() const;
-    void set_genetic_vals(const std::unordered_map<std::string, double>& vals);
 
     // ==================== Setters ====================
 

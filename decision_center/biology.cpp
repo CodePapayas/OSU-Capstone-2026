@@ -11,6 +11,12 @@ static std::random_device rd;
 static std::mt19937 gen(rd());
 static std::uniform_real_distribution<> dis(0.0, 1.0);
 
+// Seed the internal RNG for reproducible results
+void Biology::set_global_seed(unsigned int seed)
+{
+    gen.seed(seed);
+}
+
 Biology::Biology(bool debug)
     : _energy(1.0), _health(1.0), _water(1.0)
 {
@@ -73,11 +79,6 @@ double Biology::get_efficiency(const std::string& efficiency) const
 std::unordered_map<std::string, double> Biology::get_genetic_vals() const
 {
     return _genetic_values;
-}
-
-void Biology::set_genetic_vals(const std::unordered_map<std::string, double>& vals)
-{
-    _genetic_values = vals;
 }
 
 // ==================== Setters ====================
@@ -245,8 +246,12 @@ double Biology::tick_energy_drain()
 
     // Calculate the drain: sqrt of sum, divided by number of traits, adjusted for mass
     total = std::pow(total, 0.5) / static_cast<double>(_genetic_values.size());
-    total = total * (1.0 - std::pow(_genetic_values["Mass"], 2.0));
-    double drain = std::max(total * ENERGY_DRAIN_COEFFICIENT,.001);
+    total = std::max(
+        total * (1.0 - std::pow(_genetic_values["Mass"], 2.0)),
+        0.02
+    );
+
+    double drain = total * ENERGY_DRAIN_COEFFICIENT;
     add_energy(drain * -1);
     return total;
 }
@@ -276,10 +281,8 @@ void Biology::update()
     _energy = std::max(_energy, 0.0);
     _water = std::max(_water, 0.0);
 
-    _dehydration_ticks = (_water <= 0.0) ? _dehydration_ticks + 1 : 0;
-
-    tick_energy_drain();
-    tick_health_drain();
+    std::cout << "Tick energy loss: " << tick_energy_drain() << std::endl;
+    std::cout << "Tick Health loss: " << tick_health_drain() << std::endl;
 }
 
 bool Biology::check_death() const
@@ -287,7 +290,7 @@ bool Biology::check_death() const
     /**
      * Checks if the organism should be considered dead.
      */
-    return _health <= 0.0 || _dehydration_ticks >= 3;
+    return _health <= 0.0;
 }
 
 // ==================== Display & Debugging ====================

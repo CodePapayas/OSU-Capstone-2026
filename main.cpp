@@ -3,13 +3,16 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <random>
 #include <termios.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "source/Simulation.hpp"
 #include "include/db_connector.h"
 #include "include/save_manager.h"
 #include "include/auto_save.h"
+#include "decision_center/biology.hpp"
 
 // Raw terminal mode for non-blocking single-keypress input (no Enter required)
 static struct termios s_origTermios;
@@ -44,23 +47,95 @@ static int pollKey()
 }
 
 int main() {
-    int numEntities = 5;
+    Simulation sim;
+    sim.initialize();
+    std::cout << "\nSimulation setup complete with "
+              << sim.get_entity_count() << " entity!\n";
+
+    // Startup parameter prompts (seed presets, entity count, resource density/type, coords, genetics)
+    int envSeed = -1;
+    int startX = 0;
+    int startY = 0;
+    bool useDeterministicGenetics = false;
+    int initialEntityCount = 1;
+    double resourceSpawnProb = 0.1;
+    double resourceFoodProb  = 0.5;
+
     {
-        std::cout << "Population size [default 5]: ";
         std::string line;
+
+        std::cout << "Resource spawn preset — [1] Sparse (2%), [2] Balanced (10%), [3] Dense (25%), [4] Custom [default 2]: ";
+        std::getline(std::cin, line);
+        int preset = 2;
+        if (!line.empty()) {
+            try { preset = std::stoi(line); } catch (...) { preset = 2; }
+        }
+        if (preset == 1) { resourceSpawnProb = 0.02; resourceFoodProb = 0.5; }
+        else if (preset == 2) { resourceSpawnProb = 0.10; resourceFoodProb = 0.5; }
+        else if (preset == 3) { resourceSpawnProb = 0.25; resourceFoodProb = 0.5; }
+        else {
+            std::cout << "Custom spawn probability (0.0-1.0) [0.10]: ";
+            std::getline(std::cin, line);
+            if (!line.empty()) { try { resourceSpawnProb = std::stod(line); } catch (...) { resourceSpawnProb = 0.10; } }
+            std::cout << "Probability resource is FOOD (0.0-1.0) [0.5]: ";
+            std::getline(std::cin, line);
+            if (!line.empty()) { try { resourceFoodProb = std::stod(line); } catch (...) { resourceFoodProb = 0.5; } }
+        }
+
+        // Random seed for reproducibility
+        std::cout << "Random seed for environment (blank=generate): ";
         std::getline(std::cin, line);
         if (!line.empty()) {
             try {
-                int v = std::stoi(line);
-                if (v >= 1) numEntities = v;
-            } catch (...) {}
+                envSeed = static_cast<int>(std::stol(line));
+            } catch (...) {
+                envSeed = -1;
+                std::cout << "Invalid seed entered; a seed will be generated.\n";
+            }
+        }
+
+        Vector2d cur = sim.biologyGetCoordinates();
+        int defX = static_cast<int>(cur.x);
+        int defY = static_cast<int>(cur.y);
+        std::cout << "Starting X coordinate [" << defX << "]: ";
+        std::getline(std::cin, line);
+        if (!line.empty()) {
+            try { startX = std::stoi(line); } catch (...) { startX = defX; }
+        } else startX = defX;
+        std::cout << "Starting Y coordinate [" << defY << "]: ";
+        std::getline(std::cin, line);
+        if (!line.empty()) {
+            try { startY = std::stoi(line); } catch (...) { startY = defY; }
+        } else startY = defY;
+
+        std::cout << "Number of starting entities [1]: ";
+        std::getline(std::cin, line);
+        if (!line.empty()) {
+            try { initialEntityCount = std::max(1, std::stoi(line)); } catch (...) { initialEntityCount = 1; }
+        }
+
+        std::cout << "Use deterministic genetics (no randomness)? [y/N]: ";
+        std::getline(std::cin, line);
+        if (!line.empty() && (line[0] == 'y' || line[0] == 'Y')) {
+            useDeterministicGenetics = true;
         }
     }
 
-    Simulation sim;
-    sim.initialize(numEntities);
-    std::cout << "\nSimulation setup complete with "
-              << sim.get_entity_count() << " entities!\n";
+    // Apply seed (generate if blank) and set global RNGs for reproducibility
+    if (envSeed == -1) {
+        unsigned long long now = static_cast<unsigned long long>(std::chrono::system_clock::now().time_since_epoch().count());
+        unsigned int genSeed = static_cast<unsigned int>((now ^ std::random_device{}()) & 0xFFFFFFFF);
+        envSeed = static_cast<int>(genSeed);
+        std::cout << "Generated seed: " << envSeed << " (use this to reproduce)\n";
+    } else {
+        std::cout << "Using provided seed: " << envSeed << "\n";
+    }
+    std::srand(static_cast<unsigned int>(envSeed));
+    Biology::set_global_seed(static_cast<unsigned int>(envSeed));
+
+    sim.setInitialEntityCount(initialEntityCount);
+    sim.setResourceSpawnProbability(resourceSpawnProb);
+    sim.setResourceFoodProbability(resourceFoodProb);
 
     {
         int displayInterval = 1;
@@ -77,43 +152,36 @@ int main() {
         std::cout << "Display interval: every " << displayInterval << " tick(s).\n";
     }
 
-    {
-        int renderDelay = 150;
-        std::cout << "Render delay ms [default 150]: ";
-        std::string line;
-        std::getline(std::cin, line);
-        if (!line.empty()) {
-            try {
-                int v = std::stoi(line);
-                if (v >= 0) renderDelay = v;
-            } catch (...) {}
+    // Reinitialize simulation so that seed, entities and resource parameters take effect
+    sim.reset();
+    if (useDeterministicGenetics) {
+        for (int i = 0; i < sim.get_entity_count(); ++i) {
+            auto e = sim.get_entity(i);
+            if (e) {
+                e->set_biology(std::make_shared<Biology>(true));
+            }
         }
-        sim.setRenderDelay(renderDelay);
+        std::cout << "Deterministic genetics applied to entities.\n";
     }
-
-    {
-        std::cout << "God mode (entity never dies) [y/N]: ";
-        std::string line;
-        std::getline(std::cin, line);
-        if (!line.empty() && (line[0] == 'y' || line[0] == 'Y')) {
-            sim.setGodMode(true);
-            std::cout << "[GOD MODE] Entity immortal — stats refilled every tick.\n";
-        }
+    // Set requested starting coords on the primary entity if present
+    auto primary = sim.get_primary_entity();
+    if (primary) {
+        sim.biologySetCoordinates(Vector2d(startX, startY));
     }
-
-    auto db = std::make_shared<DBConnector>(DBConnectionParams::fromEnv());
-    auto sm = std::make_shared<SaveManager>(db);
-    sm->initSchema("db/schema.sql");
+    std::cout << "Simulation reinitialized with startup parameters.\n";
 
     AutoSaveConfig cfg;
     cfg.intervalTicks = 3;
     cfg.maxAutoSaves  = 5;
     cfg.slotPrefix    = "autosave";
 
+    auto db = std::make_shared<DBConnector>(DBConnectionParams::fromEnv());
+    auto sm = std::make_shared<SaveManager>(db);
+    sm->initSchema("db/schema.sql");
+
     auto autoSave = std::make_shared<AutoSave>(sm, /*loadConfigFromDB=*/false);
     autoSave->configure(cfg);
     sim.enableAutoSave(autoSave);
-
     std::cout << "Auto-save enabled (every " << cfg.intervalTicks
               << " ticks, max " << cfg.maxAutoSaves << " slots)\n";
 

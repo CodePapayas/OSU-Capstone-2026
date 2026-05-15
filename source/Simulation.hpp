@@ -2,12 +2,6 @@
 
 #include <memory>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include "Environment.h"
-#include "../decision_center/entity.hpp"
-#include "../perception_movement/perception.hpp"
-#include "PerlinNoise.hpp"
 #include <cstdint>
 #include "Environment.h"
 #include "../decision_center/entity.hpp"
@@ -36,22 +30,17 @@ private:
     std::vector<std::unique_ptr<Entity>> _entities;
     std::unique_ptr<Perception> _perception;
     std::unique_ptr<ResourceManager> _resource_manager;
-    size_t _pop_cap = 50;
-
-    int  _current_entity_index = 0;
-    bool _debug = false;
-    std::unordered_map<int, Entity*> _entity_pos_map;
-    std::unordered_set<int> _prev_entity_positions;
-    bool m_firstRender = true;
-    int  m_renderDelayMs = 150;
 
     uint64_t m_tick = 0;
     std::unique_ptr<CircularBuffer<SimulationState>> m_stateHistory;
     int  m_displayInterval     = 1;   // render every N ticks
     bool m_paused              = false;
     bool m_fastForwardActive   = false;
-    bool m_godMode             = false;
     int  m_fastForwardInterval = 10;
+    // User-controllable startup parameters
+    int   m_initialEntityCount     = 1;
+    double m_resourceSpawnProbability = 0.1; // probability 0.0-1.0 to spawn a resource per tile
+    double m_resourceFoodProbability  = 0.5; // probability that a spawned resource is FOOD vs WATER
 
 #ifdef ALIFE_USE_DB
     std::shared_ptr<AutoSave>                        m_autoSave;
@@ -72,15 +61,11 @@ public:
     /**
      * @brief Initializes the simulation with environment, entity, and brain. Currently all randos
      */
-    void initialize(int num_entities = 5);
-    void set_pop_cap(size_t cap) { _pop_cap = cap; }
+    void initialize();
 
     void seed_resources();
 
-    // WARNING: MOVE_UP/DOWN/LEFT/RIGHT must stay at 0-3 in this exact order.
-    // execute_movement() casts these codes directly to Movement::Direction (NORTH=0,SOUTH=1,WEST=2,EAST=3).
-    // Any new decision inserted before index 4 silently maps to a diagonal move instead.
-    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5, REPRODUCE=6};
+    enum DecisionCodes {MOVE_UP=0, MOVE_DOWN=1, MOVE_LEFT=2, MOVE_RIGHT=3, STAY_STILL=4, CONSUME=5};
     /**
      * @brief Returns the value of the tile located at (x,y)
      * @return the float value.
@@ -104,6 +89,7 @@ public:
      * @return Pointer to the first entity
      */
     Entity* get_primary_entity() const;
+    Entity* get_entity(int index) const;
 
     void interpret_decision(int decision_code);
 
@@ -141,7 +127,7 @@ public:
      * Tiles are colored blue (low values) to red (high values)
      * Entities are displayed as white "X"s
      */
-    void display_environment(int alive = -1) const;
+    void display_environment() const;
 
     /**
      * @brief Gets the vision value of the primary entity, which may be used to filter perception in the future
@@ -150,12 +136,6 @@ public:
     float get_vision_value() const;
 
     std::vector<double> filter_perception(std::vector<double> perception, int tilesToIgnore) const;
-    std::vector<double> get_perception_expanded(const std::string& type) const;
-
-    Entity* reproduce(Entity* p1, Entity* p2);
-    void set_primary_entity(const Entity& entity);
-    void set_primary_entity_random();
-    void consumption();
 
 #ifdef ALIFE_USE_DB
     void enableAutoSave(std::shared_ptr<AutoSave> autoSave);
@@ -170,6 +150,11 @@ public:
     const ResourceManager* getResourceManager() const;
     void reset();
 
+    // Startup parameter setters
+    void setInitialEntityCount(int count);
+    void setResourceSpawnProbability(double prob);
+    void setResourceFoodProbability(double prob);
+
     // display interval: render grid every N ticks; fast-forward overrides with its own interval
     void setDisplayInterval(int interval);
     int  getDisplayInterval()     const { return m_displayInterval; }
@@ -180,9 +165,4 @@ public:
     void setFastForward(bool enabled, int interval = 0); // interval=0 keeps current FF interval
     bool isFastForwarding()       const { return m_fastForwardActive; }
     int  getFastForwardInterval() const { return m_fastForwardInterval; }
-
-    void setGodMode(bool enabled) { m_godMode = enabled; }
-    bool isGodMode()        const { return m_godMode; }
-
-    void setRenderDelay(int ms)   { m_renderDelayMs = ms; }
 };
