@@ -1,30 +1,27 @@
-```
-╔══════════════════════════════════════════════════════════════════════╗
-║                                                                      ║
-║    ___    __    ___  ____  ____     ___  ___  __  __                 ║
-║   / _ |  / /   |_ _||  __||  __|   / __||_ _||  \/  |               ║
-║  / __ | / /__   | | | |_  | |_     \__ \ | | | |\/| |               ║
-║ /_/ |_|/____/  |___||_|   |___|    |___/|___||_|  |_|               ║
-║                                                                      ║
-║  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ║
-║       ARTIFICIAL  LIFE  EVOLUTION  SIMULATOR  //  C++17              ║
-║  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ║
-║                                                                      ║
-║   Oregon State University  ·  CS 462  ·  2026                       ║
-║   Lindskog · Wilkins-Olson · Sherman · Bliss · Stickler              ║
-║                                                                      ║
-╚══════════════════════════════════════════════════════════════════════╝
+```                                                 
+         ___         __   ___  ____  ____     ___  ___  __  __ 
+        / _ |       / /  |_ _||  __||  __|   / __||_ _||  \/  |
+       / __ |  ==  / /__  | | | |_  | |_     \__ \ | | | |\/| |
+      /_/ |_|     /____/ |___||_|   |___|    |___/|___||_|  |_|
+                                                    
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+        ARTIFICIAL LIFE EVOLUTION CAPSTONE PROJECT - 2026 
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+            Oregon State University  ·  CS 462  ·  2026
+        Lindskog · Wilkins-Olson · Sherman · Bliss · Stickler   
+
 ```
 
-> Agents evolve. Resources deplete. The fit survive.
-> Watch emergence happen — one tick at a time.
+> Our teams contribution to the OSU A-Life Challenge.
+> Simulations are cool.
 
 ---
 
 <!-- GIF: drop a screen recording of the sim running here -->
 <!-- ![Simulation running](docs/demo.gif) -->
 
-![Simulation Demo](docs/demo.gif)
+![Simulation Demo](img/demo-gif-4dahomies_2-ezgif.com-optimize(1).gif)
 
 ---
 
@@ -38,14 +35,6 @@ Key systems:
 - **Persistence** — tick-accurate autosave to PostgreSQL + CSV export
 - **Visualizer** — live ImGui dashboard backed by DB snapshots
 
----
-
-<!-- IMAGE: drop a screenshot of the visualizer / grid state here -->
-<!-- ![Visualizer screenshot](docs/visualizer.png) -->
-
-![Visualizer](docs/visualizer.png)
-
----
 
 ## Build & Run
 
