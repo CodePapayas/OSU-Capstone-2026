@@ -21,7 +21,7 @@
 <!-- GIF: drop a screen recording of the sim running here -->
 <!-- ![Simulation running](docs/demo.gif) -->
 
-![Simulation Demo](img/demo-gif-4dahomies_2-ezgif.com-optimize(1).gif)
+![Simulation Demo](img/ezgif.com-optimize.gif)
 
 ---
 
